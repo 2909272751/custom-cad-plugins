@@ -116,6 +116,7 @@ Unblock-File "插件DLL完整路径"
 
 当前首个合集版本是 `v0.1.0`，包含：
 
+- `自建CAD插件-v0.1.0-简易说明.txt`
 - `OpeningOutlinePlugin-v0.1.1-autocad2022.dll`
 - `OuterOutlinePlugin-v0.1.5-autocad2022.dll`
 - `HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll`

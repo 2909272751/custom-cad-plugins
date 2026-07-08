@@ -1,0 +1,38 @@
+自建 CAD 插件 v0.1.0 简易说明
+
+一、通用加载方法
+
+1. 下载需要的 DLL 文件。
+2. 打开 AutoCAD。
+3. 命令行输入：
+   NETLOAD
+4. 选择下载的 DLL。
+5. 加载完成后，输入对应命令使用。
+
+注意：
+- AutoCAD 加载 .NET 插件后通常不能卸载；如果换了新版 DLL，建议重启 CAD 后再加载。
+- 如果下载的 DLL 加载时报“不支持操作”，右键 DLL -> 属性 -> 勾选/点击“解除锁定”，再重新 NETLOAD。
+
+
+二、三个插件分别干什么
+
+1. OpeningOutlinePlugin
+   命令：DKTRACE
+   用途：根据图纸里的开洞符号和边界图层，生成洞口闭合轮廓线，方便后续统计洞口面积。
+
+2. OuterOutlinePlugin
+   命令：PCOUTLINE
+   用途：从楼层或构件边线中提取干净的外轮廓闭合线，方便统计外轮廓面积。
+
+3. HatchOuterPolylinePlugin
+   命令：HATCHPL
+   用途：从 Hatch 直接提取最外层闭合 Polyline，忽略内部文字洞、小洞和 Island。
+
+
+三、日志命令
+
+DKTRACE 出问题：输入 DKLOG
+PCOUTLINE 出问题：输入 PCLOG
+HATCHPL 出问题：输入 HATCHPLLOG
+
+把日志文件发出来，方便定位问题。
