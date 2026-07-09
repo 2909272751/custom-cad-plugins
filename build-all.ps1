@@ -8,7 +8,8 @@ $ErrorActionPreference = "Stop"
 $plugins = @(
   "OpeningOutlinePlugin",
   "OuterOutlinePlugin",
-  "HatchOuterPolylinePlugin"
+  "HatchOuterPolylinePlugin",
+  "LayerOffsetPlugin"
 )
 
 foreach ($plugin in $plugins) {
