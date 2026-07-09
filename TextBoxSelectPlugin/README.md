@@ -16,7 +16,7 @@ AutoCAD 选择“框内有文字”的封闭 PL 框插件。
 2. 加载 DLL：
 
 ```text
-TextBoxSelectPlugin-v0.1.1-autocad2021.dll
+TextBoxSelectPlugin-v0.1.2-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -37,7 +37,8 @@ TXTBOXSEL
 - 框对象：当前版本识别闭合 `Polyline`。
 - 文字对象：识别 `DBText` 和 `MText`。
 - 判断方式：取文字几何包围盒中心点，判断该点是否落在封闭 PL 框内部。
-- 如果一个文字同时落在多个重叠/嵌套框内，只选中面积最小的封闭 PL 框。
+- 候选框必须包含文字中心点，并且文字几何包围盒需要落在候选框外包范围内。
+- 如果一个文字同时落在多个合格的重叠/嵌套框内，只选中面积最小的封闭 PL 框。
 - 带弧段的 PL 框会进行弧段采样后再判断。
 
 ## 当前限制
@@ -63,5 +64,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\TextBoxSelectPlugin-v0.1.1-autocad2021.dll
+dist\TextBoxSelectPlugin-v0.1.2-autocad2021.dll
 ```

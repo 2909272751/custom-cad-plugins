@@ -60,7 +60,7 @@ namespace TextBoxSelectPlugin
                 HashSet<ObjectId> selectedIds = SelectionToSet(rangeResult.Value);
                 List<Polyline> boxes = new List<Polyline>();
                 List<ObjectId> boxIds = new List<ObjectId>();
-                List<Point2d> textPoints = new List<Point2d>();
+                List<TextInfo> texts = new List<TextInfo>();
 
                 using (Transaction tr = db.TransactionManager.StartTransaction())
                 {
@@ -83,15 +83,15 @@ namespace TextBoxSelectPlugin
                         }
                         else if (string.Equals(entity.Layer, textLayer, StringComparison.OrdinalIgnoreCase))
                         {
-                            Point2d? textPoint = GetTextPoint(entity);
-                            if (textPoint.HasValue)
+                            TextInfo textInfo = GetTextInfo(entity);
+                            if (textInfo != null)
                             {
-                                textPoints.Add(textPoint.Value);
+                                texts.Add(textInfo);
                             }
                         }
                     }
 
-                    List<ObjectId> foundBoxIds = FindBoxesContainingText(boxes, boxIds, textPoints);
+                    List<ObjectId> foundBoxIds = FindBoxesContainingText(boxes, boxIds, texts);
                     if (foundBoxIds.Count > 0)
                     {
                         ed.SetImpliedSelection(foundBoxIds.ToArray());
@@ -99,7 +99,7 @@ namespace TextBoxSelectPlugin
                         highlightedIds.AddRange(foundBoxIds);
                     }
 
-                    ed.WriteMessage(string.Format("\n\u5b8c\u6210\uff1a\u6846\u9009\u8303\u56f4\u5185\u627e\u5230 {0} \u4e2a\u95ed\u5408 PL \u6846\uff0c{1} \u4e2a\u6587\u5b57\u70b9\uff0c\u5176\u4e2d {2} \u4e2a\u6846\u5185\u6709\u6587\u5b57\uff0c\u5df2\u9009\u4e2d\u3002", boxes.Count, textPoints.Count, foundBoxIds.Count));
+                    ed.WriteMessage(string.Format("\n\u5b8c\u6210\uff1a\u6846\u9009\u8303\u56f4\u5185\u627e\u5230 {0} \u4e2a\u95ed\u5408 PL \u6846\uff0c{1} \u4e2a\u6587\u5b57\uff0c\u5176\u4e2d {2} \u4e2a\u6846\u5185\u6709\u6587\u5b57\uff0c\u5df2\u9009\u4e2d\u3002", boxes.Count, texts.Count, foundBoxIds.Count));
                     tr.Commit();
                 }
             }
@@ -200,19 +200,20 @@ namespace TextBoxSelectPlugin
             return ids;
         }
 
-        private static List<ObjectId> FindBoxesContainingText(List<Polyline> boxes, List<ObjectId> boxIds, List<Point2d> textPoints)
+        private static List<ObjectId> FindBoxesContainingText(List<Polyline> boxes, List<ObjectId> boxIds, List<TextInfo> texts)
         {
             HashSet<ObjectId> found = new HashSet<ObjectId>();
 
-            for (int textIndex = 0; textIndex < textPoints.Count; textIndex++)
+            for (int textIndex = 0; textIndex < texts.Count; textIndex++)
             {
+                TextInfo text = texts[textIndex];
                 int bestBoxIndex = -1;
                 double bestArea = double.MaxValue;
 
                 for (int boxIndex = 0; boxIndex < boxes.Count; boxIndex++)
                 {
                     Polyline box = boxes[boxIndex];
-                    if (!IsPointInsidePolyline(box, textPoints[textIndex]))
+                    if (!IsTextInsideCandidateBox(box, text))
                     {
                         continue;
                     }
@@ -239,6 +240,41 @@ namespace TextBoxSelectPlugin
             return new List<ObjectId>(found);
         }
 
+        private static bool IsTextInsideCandidateBox(Polyline box, TextInfo text)
+        {
+            if (!IsPointInsidePolyline(box, text.Center))
+            {
+                return false;
+            }
+
+            if (!IsTextExtentsInsideEntityExtents(box, text))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsTextExtentsInsideEntityExtents(Entity entity, TextInfo text)
+        {
+            try
+            {
+                Extents3d extents = entity.GeometricExtents;
+                double textWidth = Math.Abs(text.Max.X - text.Min.X);
+                double textHeight = Math.Abs(text.Max.Y - text.Min.Y);
+                double tolerance = Math.Max(1e-6, Math.Max(textWidth, textHeight) * 0.15);
+
+                return text.Min.X >= extents.MinPoint.X - tolerance &&
+                    text.Min.Y >= extents.MinPoint.Y - tolerance &&
+                    text.Max.X <= extents.MaxPoint.X + tolerance &&
+                    text.Max.Y <= extents.MaxPoint.Y + tolerance;
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
         private static double? GetPolylineArea(Polyline polyline)
         {
             try
@@ -252,40 +288,48 @@ namespace TextBoxSelectPlugin
             }
         }
 
-        private static Point2d? GetTextPoint(Entity entity)
+        private static TextInfo GetTextInfo(Entity entity)
         {
             DBText dbText = entity as DBText;
             if (dbText != null)
             {
-                Point3d? center = TryGetExtentsCenter(dbText);
-                Point3d point = center.HasValue ? center.Value : dbText.Position;
-                return new Point2d(point.X, point.Y);
+                return CreateTextInfo(dbText, dbText.Position);
             }
 
             MText mText = entity as MText;
             if (mText != null)
             {
-                Point3d? center = TryGetExtentsCenter(mText);
-                Point3d point = center.HasValue ? center.Value : mText.Location;
-                return new Point2d(point.X, point.Y);
+                return CreateTextInfo(mText, mText.Location);
             }
 
             return null;
         }
 
-        private static Point3d? TryGetExtentsCenter(Entity entity)
+        private static TextInfo CreateTextInfo(Entity entity, Point3d fallbackPoint)
         {
             try
             {
                 Extents3d extents = entity.GeometricExtents;
-                return new Point3d(
+                Point2d center = new Point2d(
                     (extents.MinPoint.X + extents.MaxPoint.X) / 2.0,
-                    (extents.MinPoint.Y + extents.MaxPoint.Y) / 2.0,
-                    (extents.MinPoint.Z + extents.MaxPoint.Z) / 2.0);
+                    (extents.MinPoint.Y + extents.MaxPoint.Y) / 2.0);
+
+                return new TextInfo
+                {
+                    Center = center,
+                    Min = new Point2d(extents.MinPoint.X, extents.MinPoint.Y),
+                    Max = new Point2d(extents.MaxPoint.X, extents.MaxPoint.Y)
+                };
             }
             catch
             {
-                return null;
+                Point2d fallback = new Point2d(fallbackPoint.X, fallbackPoint.Y);
+                return new TextInfo
+                {
+                    Center = fallback,
+                    Min = fallback,
+                    Max = fallback
+                };
             }
         }
 
@@ -417,6 +461,15 @@ namespace TextBoxSelectPlugin
             catch
             {
             }
+        }
+
+        private class TextInfo
+        {
+            public Point2d Center { get; set; }
+
+            public Point2d Min { get; set; }
+
+            public Point2d Max { get; set; }
         }
     }
 }
