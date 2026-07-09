@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -10,6 +11,8 @@ namespace TextBoxSelectPlugin
 {
     public class TextBoxSelectCommand : IExtensionApplication
     {
+        private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "TXTBOXSEL.log");
+
         public void Initialize()
         {
         }
@@ -30,6 +33,8 @@ namespace TextBoxSelectPlugin
             Database db = doc.Database;
             Editor ed = doc.Editor;
             List<ObjectId> highlightedIds = new List<ObjectId>();
+            List<string> logLines = new List<string>();
+            logLines.Add("TXTBOXSEL started: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             try
             {
@@ -40,6 +45,7 @@ namespace TextBoxSelectPlugin
                     return;
                 }
 
+                logLines.Add("Box layer: " + boxLayer + ", entities in current space: " + boxLayerIds.Count);
                 highlightedIds.AddRange(boxLayerIds);
 
                 string textLayer;
@@ -49,15 +55,18 @@ namespace TextBoxSelectPlugin
                     return;
                 }
 
+                logLines.Add("Text layer: " + textLayer + ", entities in current space: " + textLayerIds.Count);
                 highlightedIds.AddRange(textLayerIds);
 
                 PromptSelectionResult rangeResult = PromptForRange(ed);
                 if (rangeResult.Status != PromptStatus.OK)
                 {
+                    logLines.Add("Range selection cancelled or failed: " + rangeResult.Status);
                     return;
                 }
 
                 HashSet<ObjectId> selectedIds = SelectionToSet(rangeResult.Value);
+                logLines.Add("Range selection object count: " + selectedIds.Count);
                 List<Polyline> boxes = new List<Polyline>();
                 List<ObjectId> boxIds = new List<ObjectId>();
                 List<TextInfo> texts = new List<TextInfo>();
@@ -79,6 +88,7 @@ namespace TextBoxSelectPlugin
                             {
                                 boxes.Add(polyline);
                                 boxIds.Add(id);
+                                logLines.Add("Box candidate: " + FormatObjectId(id) + ", area=" + SafeAreaText(polyline));
                             }
                         }
                         else if (string.Equals(entity.Layer, textLayer, StringComparison.OrdinalIgnoreCase))
@@ -88,12 +98,20 @@ namespace TextBoxSelectPlugin
                             {
                                 textInfo.Id = id;
                                 texts.Add(textInfo);
+                                logLines.Add("Text candidate: " + FormatObjectId(id) + ", center=(" + textInfo.Center.X + "," + textInfo.Center.Y + ")");
                             }
                         }
                     }
 
-                    MatchResult matchResult = FindBoxesContainingText(boxes, boxIds, texts);
+                    logLines.Add("Closed polyline boxes in range: " + boxes.Count);
+                    logLines.Add("Text objects in range: " + texts.Count);
+
+                    MatchResult matchResult = FindBoxesContainingText(boxes, boxIds, texts, logLines);
                     List<ObjectId> selectionIds = CombineSelectionIds(matchResult.BoxIds, matchResult.TextIds);
+                    logLines.Add("Matched boxes: " + matchResult.BoxIds.Count);
+                    logLines.Add("Matched texts: " + matchResult.TextIds.Count);
+                    logLines.Add("Combined selection count: " + selectionIds.Count);
+
                     if (selectionIds.Count > 0)
                     {
                         ed.SetImpliedSelection(selectionIds.ToArray());
@@ -107,12 +125,26 @@ namespace TextBoxSelectPlugin
             }
             catch (System.Exception ex)
             {
+                logLines.Add("ERROR: " + ex.ToString());
                 ed.WriteMessage(string.Format("\nTXTBOXSEL \u6267\u884c\u5931\u8d25\uff1a{0}", ex.Message));
             }
             finally
             {
+                WriteLog(logLines);
                 UnhighlightEntities(db, highlightedIds);
             }
+        }
+
+        [CommandMethod("TXTBOXLOG")]
+        public void ShowLogPath()
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            if (doc == null)
+            {
+                return;
+            }
+
+            doc.Editor.WriteMessage("\nTXTBOXSEL log: " + LogPath);
         }
 
         private static bool PromptAndConfirmLayer(Database db, Editor ed, string pickMessage, string confirmMessage, out string layerName, out List<ObjectId> layerIds)
@@ -202,7 +234,7 @@ namespace TextBoxSelectPlugin
             return ids;
         }
 
-        private static MatchResult FindBoxesContainingText(List<Polyline> boxes, List<ObjectId> boxIds, List<TextInfo> texts)
+        private static MatchResult FindBoxesContainingText(List<Polyline> boxes, List<ObjectId> boxIds, List<TextInfo> texts, List<string> logLines)
         {
             HashSet<ObjectId> foundBoxes = new HashSet<ObjectId>();
             HashSet<ObjectId> foundTexts = new HashSet<ObjectId>();
@@ -238,6 +270,11 @@ namespace TextBoxSelectPlugin
                 {
                     foundBoxes.Add(boxIds[bestBoxIndex]);
                     foundTexts.Add(text.Id);
+                    logLines.Add("MATCH text " + FormatObjectId(text.Id) + " -> box " + FormatObjectId(boxIds[bestBoxIndex]) + ", area=" + bestArea);
+                }
+                else
+                {
+                    logLines.Add("NO MATCH text " + FormatObjectId(text.Id));
                 }
             }
 
@@ -310,6 +347,36 @@ namespace TextBoxSelectPlugin
             catch
             {
                 return null;
+            }
+        }
+
+        private static string SafeAreaText(Polyline polyline)
+        {
+            double? area = GetPolylineArea(polyline);
+            return area.HasValue ? area.Value.ToString() : "n/a";
+        }
+
+        private static string FormatObjectId(ObjectId id)
+        {
+            try
+            {
+                return id.Handle.ToString();
+            }
+            catch
+            {
+                return id.ToString();
+            }
+        }
+
+        private static void WriteLog(IEnumerable<string> lines)
+        {
+            try
+            {
+                File.AppendAllLines(LogPath, lines);
+                File.AppendAllText(LogPath, Environment.NewLine);
+            }
+            catch
+            {
             }
         }
 

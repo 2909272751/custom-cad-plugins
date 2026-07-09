@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-$version = "0.1.3"
+$version = "0.1.4"
 $outDir = Join-Path $PSScriptRoot "dist"
 $out = Join-Path $outDir "TextBoxSelectPlugin-v$version-$AcadLabel.dll"
 

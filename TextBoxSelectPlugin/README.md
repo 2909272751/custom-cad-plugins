@@ -16,7 +16,7 @@ AutoCAD 选择“框内有文字”的封闭 PL 框插件。
 2. 加载 DLL：
 
 ```text
-TextBoxSelectPlugin-v0.1.3-autocad2021.dll
+TextBoxSelectPlugin-v0.1.4-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -47,6 +47,23 @@ TXTBOXSEL
 - 不进入块参照内部识别。
 - 如果文字中心点不在框内，即使文字有一部分压到框内，也不会算作命中。
 
+
+## 日志
+
+如果识别结果不对，运行：
+
+```text
+TXTBOXLOG
+```
+
+日志默认写到：
+
+```text
+%TEMP%\TXTBOXSEL.log
+```
+
+日志会记录框线图层、文字图层、框选数量、候选框、候选文字和最终匹配结果。
+
 ## 构建
 
 默认按本机 AutoCAD 2021 路径构建：
@@ -64,5 +81,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\TextBoxSelectPlugin-v0.1.3-autocad2021.dll
+dist\TextBoxSelectPlugin-v0.1.4-autocad2021.dll
 ```
