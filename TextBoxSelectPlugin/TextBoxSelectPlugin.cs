@@ -202,22 +202,54 @@ namespace TextBoxSelectPlugin
 
         private static List<ObjectId> FindBoxesContainingText(List<Polyline> boxes, List<ObjectId> boxIds, List<Point2d> textPoints)
         {
-            List<ObjectId> found = new List<ObjectId>();
+            HashSet<ObjectId> found = new HashSet<ObjectId>();
 
-            for (int i = 0; i < boxes.Count; i++)
+            for (int textIndex = 0; textIndex < textPoints.Count; textIndex++)
             {
-                Polyline box = boxes[i];
-                for (int j = 0; j < textPoints.Count; j++)
+                int bestBoxIndex = -1;
+                double bestArea = double.MaxValue;
+
+                for (int boxIndex = 0; boxIndex < boxes.Count; boxIndex++)
                 {
-                    if (IsPointInsidePolyline(box, textPoints[j]))
+                    Polyline box = boxes[boxIndex];
+                    if (!IsPointInsidePolyline(box, textPoints[textIndex]))
                     {
-                        found.Add(boxIds[i]);
-                        break;
+                        continue;
                     }
+
+                    double? area = GetPolylineArea(box);
+                    if (!area.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (area.Value < bestArea)
+                    {
+                        bestArea = area.Value;
+                        bestBoxIndex = boxIndex;
+                    }
+                }
+
+                if (bestBoxIndex >= 0)
+                {
+                    found.Add(boxIds[bestBoxIndex]);
                 }
             }
 
-            return found;
+            return new List<ObjectId>(found);
+        }
+
+        private static double? GetPolylineArea(Polyline polyline)
+        {
+            try
+            {
+                double area = Math.Abs(polyline.Area);
+                return area > 1e-9 ? area : (double?)null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static Point2d? GetTextPoint(Entity entity)
