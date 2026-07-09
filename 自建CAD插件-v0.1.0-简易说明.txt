@@ -14,7 +14,7 @@
 - 如果下载的 DLL 加载时报“不支持操作”，右键 DLL -> 属性 -> 勾选/点击“解除锁定”，再重新 NETLOAD。
 
 
-二、三个插件分别干什么
+二、四个插件分别干什么
 
 1. OpeningOutlinePlugin
    命令：DKTRACE
@@ -27,6 +27,10 @@
 3. HatchOuterPolylinePlugin
    命令：HATCHPL
    用途：从 Hatch 直接提取最外层闭合 Polyline，忽略内部文字洞、小洞和 Island。
+
+4. LayerOffsetPlugin
+   命令：LOFFSET
+   用途：按图层和框选区域批量 offset 曲线对象，可选择内外方向和是否删除原图。
 
 
 三、日志命令

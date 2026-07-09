@@ -8,11 +8,11 @@
 
 | 插件 | 命令 | 一句话功能 | 下载 |
 | --- | --- | --- | --- |
-| 简易说明 | - | 简短说明三个插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.0-简易说明）](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.0/custom-cad-plugins-v0.1.0-quick-guide.txt) |
+| 简易说明 | - | 简短说明四个插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.0-简易说明）](./自建CAD插件-v0.1.0-简易说明.txt) |
 | `OpeningOutlinePlugin` | `DKTRACE` | 根据开洞符号和边界图层，生成洞口闭合轮廓线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.0/OpeningOutlinePlugin-v0.1.1-autocad2022.dll) |
 | `OuterOutlinePlugin` | `PCOUTLINE` | 从楼层或构件边线中提取干净的外轮廓闭合线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.0/OuterOutlinePlugin-v0.1.5-autocad2022.dll) |
 | `HatchOuterPolylinePlugin` | `HATCHPL` | 从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.0/HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll) |
-| `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向和是否删除原图。 | [仓库内 DLL](./LayerOffsetPlugin/dist/LayerOffsetPlugin-v0.1.0-autocad2021.dll) |
+| `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向和是否删除原图。 | [下载 DLL](./LayerOffsetPlugin/dist/LayerOffsetPlugin-v0.1.0-autocad2021.dll) |
 
 ## 新手怎么用
 
