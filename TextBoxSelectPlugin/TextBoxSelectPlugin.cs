@@ -248,7 +248,7 @@ namespace TextBoxSelectPlugin
                 for (int boxIndex = 0; boxIndex < boxes.Count; boxIndex++)
                 {
                     Polyline box = boxes[boxIndex];
-                    if (!IsTextInsideCandidateBox(box, text))
+                    if (!IsTextInsideCandidateBox(box, text, logLines, boxIds[boxIndex]))
                     {
                         continue;
                     }
@@ -302,19 +302,28 @@ namespace TextBoxSelectPlugin
             return new List<ObjectId>(combined);
         }
 
-        private static bool IsTextInsideCandidateBox(Polyline box, TextInfo text)
+        private static bool IsTextInsideCandidateBox(Polyline box, TextInfo text, List<string> logLines, ObjectId boxId)
         {
-            if (!IsPointInsidePolyline(box, text.Center))
+            bool centerInsidePolyline = IsPointInsidePolyline(box, text.Center);
+            bool centerInsideExtents = IsPointInsideEntityExtents(box, text.Center);
+
+            if (!centerInsidePolyline && !centerInsideExtents)
             {
                 return false;
             }
 
-            if (!IsTextExtentsInsideEntityExtents(box, text))
+            if (centerInsidePolyline && IsTextExtentsInsideEntityExtents(box, text))
             {
-                return false;
+                return true;
             }
 
-            return true;
+            if (centerInsideExtents)
+            {
+                logLines.Add("FALLBACK text " + FormatObjectId(text.Id) + " accepts box " + FormatObjectId(boxId) + " by extents center");
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsTextExtentsInsideEntityExtents(Entity entity, TextInfo text)
@@ -334,6 +343,22 @@ namespace TextBoxSelectPlugin
             catch
             {
                 return true;
+            }
+        }
+
+        private static bool IsPointInsideEntityExtents(Entity entity, Point2d point)
+        {
+            try
+            {
+                Extents3d extents = entity.GeometricExtents;
+                return point.X >= extents.MinPoint.X &&
+                    point.Y >= extents.MinPoint.Y &&
+                    point.X <= extents.MaxPoint.X &&
+                    point.Y <= extents.MaxPoint.Y;
+            }
+            catch
+            {
+                return false;
             }
         }
 
