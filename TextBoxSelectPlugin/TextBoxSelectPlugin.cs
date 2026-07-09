@@ -86,20 +86,22 @@ namespace TextBoxSelectPlugin
                             TextInfo textInfo = GetTextInfo(entity);
                             if (textInfo != null)
                             {
+                                textInfo.Id = id;
                                 texts.Add(textInfo);
                             }
                         }
                     }
 
-                    List<ObjectId> foundBoxIds = FindBoxesContainingText(boxes, boxIds, texts);
-                    if (foundBoxIds.Count > 0)
+                    MatchResult matchResult = FindBoxesContainingText(boxes, boxIds, texts);
+                    List<ObjectId> selectionIds = CombineSelectionIds(matchResult.BoxIds, matchResult.TextIds);
+                    if (selectionIds.Count > 0)
                     {
-                        ed.SetImpliedSelection(foundBoxIds.ToArray());
-                        HighlightEntities(tr, foundBoxIds, true);
-                        highlightedIds.AddRange(foundBoxIds);
+                        ed.SetImpliedSelection(selectionIds.ToArray());
+                        HighlightEntities(tr, selectionIds, true);
+                        highlightedIds.AddRange(selectionIds);
                     }
 
-                    ed.WriteMessage(string.Format("\n\u5b8c\u6210\uff1a\u6846\u9009\u8303\u56f4\u5185\u627e\u5230 {0} \u4e2a\u95ed\u5408 PL \u6846\uff0c{1} \u4e2a\u6587\u5b57\uff0c\u5176\u4e2d {2} \u4e2a\u6846\u5185\u6709\u6587\u5b57\uff0c\u5df2\u9009\u4e2d\u3002", boxes.Count, texts.Count, foundBoxIds.Count));
+                    ed.WriteMessage(string.Format("\n\u5b8c\u6210\uff1a\u6846\u9009\u8303\u56f4\u5185\u627e\u5230 {0} \u4e2a\u95ed\u5408 PL \u6846\uff0c{1} \u4e2a\u6587\u5b57\uff0c\u547d\u4e2d {2} \u4e2a\u6846\u548c {3} \u4e2a\u6587\u5b57\uff0c\u5df2\u4e00\u8d77\u9009\u4e2d\u3002", boxes.Count, texts.Count, matchResult.BoxIds.Count, matchResult.TextIds.Count));
                     tr.Commit();
                 }
             }
@@ -200,9 +202,10 @@ namespace TextBoxSelectPlugin
             return ids;
         }
 
-        private static List<ObjectId> FindBoxesContainingText(List<Polyline> boxes, List<ObjectId> boxIds, List<TextInfo> texts)
+        private static MatchResult FindBoxesContainingText(List<Polyline> boxes, List<ObjectId> boxIds, List<TextInfo> texts)
         {
-            HashSet<ObjectId> found = new HashSet<ObjectId>();
+            HashSet<ObjectId> foundBoxes = new HashSet<ObjectId>();
+            HashSet<ObjectId> foundTexts = new HashSet<ObjectId>();
 
             for (int textIndex = 0; textIndex < texts.Count; textIndex++)
             {
@@ -233,11 +236,33 @@ namespace TextBoxSelectPlugin
 
                 if (bestBoxIndex >= 0)
                 {
-                    found.Add(boxIds[bestBoxIndex]);
+                    foundBoxes.Add(boxIds[bestBoxIndex]);
+                    foundTexts.Add(text.Id);
                 }
             }
 
-            return new List<ObjectId>(found);
+            return new MatchResult
+            {
+                BoxIds = new List<ObjectId>(foundBoxes),
+                TextIds = new List<ObjectId>(foundTexts)
+            };
+        }
+
+        private static List<ObjectId> CombineSelectionIds(IEnumerable<ObjectId> boxIds, IEnumerable<ObjectId> textIds)
+        {
+            HashSet<ObjectId> combined = new HashSet<ObjectId>();
+
+            foreach (ObjectId id in boxIds)
+            {
+                combined.Add(id);
+            }
+
+            foreach (ObjectId id in textIds)
+            {
+                combined.Add(id);
+            }
+
+            return new List<ObjectId>(combined);
         }
 
         private static bool IsTextInsideCandidateBox(Polyline box, TextInfo text)
@@ -465,11 +490,20 @@ namespace TextBoxSelectPlugin
 
         private class TextInfo
         {
+            public ObjectId Id { get; set; }
+
             public Point2d Center { get; set; }
 
             public Point2d Min { get; set; }
 
             public Point2d Max { get; set; }
+        }
+
+        private class MatchResult
+        {
+            public List<ObjectId> BoxIds { get; set; }
+
+            public List<ObjectId> TextIds { get; set; }
         }
     }
 }
