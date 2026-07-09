@@ -12,7 +12,7 @@
 | `OpeningOutlinePlugin` | `DKTRACE` | 根据开洞符号和边界图层，生成洞口闭合轮廓线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/OpeningOutlinePlugin-v0.1.1-autocad2022.dll) |
 | `OuterOutlinePlugin` | `PCOUTLINE` | 从楼层或构件边线中提取干净的外轮廓闭合线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/OuterOutlinePlugin-v0.1.5-autocad2022.dll) |
 | `HatchOuterPolylinePlugin` | `HATCHPL` | 从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll) |
-| `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向和是否删除原图。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/LayerOffsetPlugin-v0.1.0-autocad2021.dll) |
+| `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向、是否删除原图和 offset 后颜色。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/LayerOffsetPlugin-v0.1.1-autocad2021.dll) |
 | `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/TextBoxSelectPlugin-v0.1.5-autocad2021.dll) |
 
 ## 新手怎么用
@@ -136,5 +136,5 @@ Unblock-File "插件DLL完整路径"
 - `OpeningOutlinePlugin-v0.1.1-autocad2022.dll`
 - `OuterOutlinePlugin-v0.1.5-autocad2022.dll`
 - `HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll`
-- `LayerOffsetPlugin-v0.1.0-autocad2021.dll`
+- `LayerOffsetPlugin-v0.1.1-autocad2021.dll`
 - `TextBoxSelectPlugin-v0.1.5-autocad2021.dll`

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -100,11 +101,18 @@ namespace LayerOffsetPlugin
                     return;
                 }
 
+                PromptIntegerResult colorResult = PromptForOffsetColor(ed);
+                if (colorResult.Status != PromptStatus.OK)
+                {
+                    return;
+                }
+
                 OffsetOptions options = new OffsetOptions
                 {
                     Distance = distanceResult.Value,
                     OffsetOutward = string.Equals(directionResult.StringResult, DirectionOut, StringComparison.OrdinalIgnoreCase),
-                    DeleteOriginal = string.Equals(deleteResult.StringResult, "Y", StringComparison.OrdinalIgnoreCase)
+                    DeleteOriginal = string.Equals(deleteResult.StringResult, "Y", StringComparison.OrdinalIgnoreCase),
+                    OffsetColorIndex = colorResult.Value
                 };
 
                 OffsetStats stats;
@@ -210,6 +218,19 @@ namespace LayerOffsetPlugin
             return ed.GetKeywords(options);
         }
 
+        private static PromptIntegerResult PromptForOffsetColor(Editor ed)
+        {
+            PromptIntegerOptions options = new PromptIntegerOptions("\n\u8bf7\u8f93\u5165 offset \u540e\u56fe\u5f62\u989c\u8272\u53f7 [1-255] <1>: ");
+            options.AllowNone = true;
+            options.AllowZero = false;
+            options.AllowNegative = false;
+            options.LowerLimit = 1;
+            options.UpperLimit = 255;
+            options.DefaultValue = 1;
+            options.UseDefaultValue = true;
+            return ed.GetInteger(options);
+        }
+
         private static List<ObjectId> CollectLayerEntityIds(Database db, Transaction tr, string layerName)
         {
             List<ObjectId> ids = new List<ObjectId>();
@@ -302,6 +323,7 @@ namespace LayerOffsetPlugin
 
                         offsetEntity.SetPropertiesFrom(entity);
                         offsetEntity.Layer = entity.Layer;
+                        offsetEntity.Color = Color.FromColorIndex(ColorMethod.ByAci, (short)options.OffsetColorIndex);
                         currentSpace.AppendEntity(offsetEntity);
                         tr.AddNewlyCreatedDBObject(offsetEntity, true);
                     }
@@ -495,6 +517,8 @@ namespace LayerOffsetPlugin
             public bool OffsetOutward { get; set; }
 
             public bool DeleteOriginal { get; set; }
+
+            public int OffsetColorIndex { get; set; }
         }
 
         private class OffsetStats

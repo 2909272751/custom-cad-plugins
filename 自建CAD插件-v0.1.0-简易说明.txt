@@ -30,7 +30,7 @@
 
 4. LayerOffsetPlugin
    命令：LOFFSET
-   用途：按图层和框选区域批量 offset 曲线对象，可选择内外方向和是否删除原图。
+   用途：按图层和框选区域批量 offset 曲线对象，可选择内外方向、是否删除原图和 offset 后颜色。
 
 5. TextBoxSelectPlugin
    命令：TXTBOXSEL

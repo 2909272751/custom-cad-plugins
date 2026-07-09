@@ -16,7 +16,7 @@ AutoCAD 批量 Offset 插件。
 2. 加载 DLL：
 
 ```text
-LayerOffsetPlugin-v0.1.0-autocad2021.dll
+LayerOffsetPlugin-v0.1.1-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -45,6 +45,12 @@ LOFFSET
 
 ```text
 是(Y) / 否(N)，默认 N
+```
+
+11. 输入 offset 后图形颜色号：
+
+```text
+1-255，默认 1 红色
 ```
 
 ## 支持对象
@@ -82,5 +88,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\LayerOffsetPlugin-v0.1.0-autocad2021.dll
+dist\LayerOffsetPlugin-v0.1.1-autocad2021.dll
 ```
