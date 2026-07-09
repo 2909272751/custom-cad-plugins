@@ -14,7 +14,7 @@
 - 如果下载的 DLL 加载时报“不支持操作”，右键 DLL -> 属性 -> 勾选/点击“解除锁定”，再重新 NETLOAD。
 
 
-二、四个插件分别干什么
+二、五个插件分别干什么
 
 1. OpeningOutlinePlugin
    命令：DKTRACE
@@ -31,6 +31,10 @@
 4. LayerOffsetPlugin
    命令：LOFFSET
    用途：按图层和框选区域批量 offset 曲线对象，可选择内外方向和是否删除原图。
+
+5. TextBoxSelectPlugin
+   命令：TXTBOXSEL
+   用途：选中框选范围内包含文字的封闭 PL 框。
 
 
 三、日志命令

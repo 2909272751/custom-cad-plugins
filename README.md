@@ -1,6 +1,6 @@
 # 自建 CAD 插件
 
-这个仓库是一个 AutoCAD 插件合集，目前包含 4 个彼此独立的插件。
+这个仓库是一个 AutoCAD 插件合集，目前包含 5 个彼此独立的插件。
 
 每个插件都有自己的源码、构建脚本、发布 DLL 和 README。你可以把它当成一个总项目管理，也可以单独进入某个插件目录查看说明、编译或加载。
 
@@ -8,11 +8,12 @@
 
 | 插件 | 命令 | 一句话功能 | 下载 |
 | --- | --- | --- | --- |
-| 简易说明 | - | 简短说明四个插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.0-简易说明）](./自建CAD插件-v0.1.0-简易说明.txt) |
+| 简易说明 | - | 简短说明五个插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.0-简易说明）](./自建CAD插件-v0.1.0-简易说明.txt) |
 | `OpeningOutlinePlugin` | `DKTRACE` | 根据开洞符号和边界图层，生成洞口闭合轮廓线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.0/OpeningOutlinePlugin-v0.1.1-autocad2022.dll) |
 | `OuterOutlinePlugin` | `PCOUTLINE` | 从楼层或构件边线中提取干净的外轮廓闭合线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.0/OuterOutlinePlugin-v0.1.5-autocad2022.dll) |
 | `HatchOuterPolylinePlugin` | `HATCHPL` | 从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.0/HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll) |
 | `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向和是否删除原图。 | [下载 DLL](./LayerOffsetPlugin/dist/LayerOffsetPlugin-v0.1.0-autocad2021.dll) |
+| `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框。 | [下载 DLL](./TextBoxSelectPlugin/dist/TextBoxSelectPlugin-v0.1.0-autocad2021.dll) |
 
 ## 新手怎么用
 
@@ -50,6 +51,7 @@ HATCHPL
 | [`OuterOutlinePlugin`](./OuterOutlinePlugin/README.md) | `PCOUTLINE` 的详细使用步骤、图层选择和外轮廓生成说明 |
 | [`HatchOuterPolylinePlugin`](./HatchOuterPolylinePlugin/README.md) | `HATCHPL` 的详细使用步骤、Hatch 样本选择和小洞补齐说明 |
 | [`LayerOffsetPlugin`](./LayerOffsetPlugin/README.md) | `LOFFSET` 的详细使用步骤、图层确认、框选范围和 offset 说明 |
+| [`TextBoxSelectPlugin`](./TextBoxSelectPlugin/README.md) | `TXTBOXSEL` 的详细使用步骤、框线图层、文字图层和识别规则说明 |
 
 ## 目录结构
 
@@ -72,9 +74,14 @@ HATCHPL
    ├─ HatchOuterPolylinePlugin.cs
    ├─ build.ps1
    └─ dist/
-└─ LayerOffsetPlugin/
+├─ LayerOffsetPlugin/
    ├─ README.md
    ├─ LayerOffsetPlugin.cs
+   ├─ build.ps1
+   └─ dist/
+└─ TextBoxSelectPlugin/
+   ├─ README.md
+   ├─ TextBoxSelectPlugin.cs
    ├─ build.ps1
    └─ dist/
 ```
@@ -129,3 +136,4 @@ Unblock-File "插件DLL完整路径"
 - `OuterOutlinePlugin-v0.1.5-autocad2022.dll`
 - `HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll`
 - `LayerOffsetPlugin-v0.1.0-autocad2021.dll`
+- `TextBoxSelectPlugin-v0.1.0-autocad2021.dll`
