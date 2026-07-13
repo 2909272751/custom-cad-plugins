@@ -10,7 +10,8 @@ $plugins = @(
   "OuterOutlinePlugin",
   "HatchOuterPolylinePlugin",
   "LayerOffsetPlugin",
-  "TextBoxSelectPlugin"
+  "TextBoxSelectPlugin",
+  "NumberTextHighlightPlugin"
 )
 
 foreach ($plugin in $plugins) {

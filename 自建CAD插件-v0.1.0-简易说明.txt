@@ -14,7 +14,7 @@
 - 如果下载的 DLL 加载时报“不支持操作”，右键 DLL -> 属性 -> 勾选/点击“解除锁定”，再重新 NETLOAD。
 
 
-二、五个插件分别干什么
+二、六个插件分别干什么
 
 1. OpeningOutlinePlugin
    命令：DKTRACE
@@ -36,6 +36,10 @@
    命令：TXTBOXSEL
    用途：选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。
 
+6. NumberTextHighlightPlugin
+   命令：NUMRED
+   用途：按大于、等于、小于条件把选定文字图层中的数字文字标红。
+
 
 三、日志命令
 
@@ -43,5 +47,6 @@ DKTRACE 出问题：输入 DKLOG
 PCOUTLINE 出问题：输入 PCLOG
 HATCHPL 出问题：输入 HATCHPLLOG
 TXTBOXSEL 出问题：输入 TXTBOXLOG
+NUMRED 出问题：输入 NUMREDLOG
 
 把日志文件发出来，方便定位问题。
