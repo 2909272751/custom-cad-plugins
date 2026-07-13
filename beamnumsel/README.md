@@ -17,7 +17,7 @@ AutoCAD 梁上数字选择插件。
 2. 加载 DLL：
 
 ```text
-beamnumsel-v0.1.2-autocad2021.dll
+beamnumsel-v0.1.3-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -55,6 +55,7 @@ BEAMNUMSEL
 - 竖向梁线按用户选择匹配左侧或右侧数字。
 - v0.1.1 收紧了贴近距离判断，不再按梁线长度放大距离，减少远处数字误选。
 - v0.1.2 增加文字方向判断：横向梁线只匹配横排数字，竖向梁线只匹配竖排数字，并适当放宽同方向贴近距离，减少漏选。
+- v0.1.3 放宽跨线贴边文字判断，解决竖排数字压在线边时漏选的问题。
 
 ## 日志
 
@@ -87,5 +88,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\beamnumsel-v0.1.2-autocad2021.dll
+dist\beamnumsel-v0.1.3-autocad2021.dll
 ```

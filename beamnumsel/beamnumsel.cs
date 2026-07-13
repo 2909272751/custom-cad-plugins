@@ -458,13 +458,13 @@ namespace beamnumsel
                 }
 
                 bool wantsAbove = !string.Equals(side.HorizontalSide, HorizontalBelow, StringComparison.OrdinalIgnoreCase);
-                if ((wantsAbove && text.Center.Y < segment.Fixed) || (!wantsAbove && text.Center.Y > segment.Fixed))
+                if ((wantsAbove && text.Max.Y < segment.Fixed) || (!wantsAbove && text.Min.Y > segment.Fixed))
                 {
                     return null;
                 }
 
                 double gap = wantsAbove ? text.Min.Y - segment.Fixed : segment.Fixed - text.Max.Y;
-                double minGap = -height * 0.35;
+                double minGap = -height * 1.2;
                 double maxGap = maxNearGap;
                 if (gap < minGap || gap > maxGap)
                 {
@@ -492,13 +492,13 @@ namespace beamnumsel
             }
 
             bool wantsLeft = !string.Equals(side.VerticalSide, VerticalRight, StringComparison.OrdinalIgnoreCase);
-            if ((wantsLeft && text.Center.X > segment.Fixed) || (!wantsLeft && text.Center.X < segment.Fixed))
+            if ((wantsLeft && text.Min.X > segment.Fixed) || (!wantsLeft && text.Max.X < segment.Fixed))
             {
                 return null;
             }
 
             double sideGap = wantsLeft ? segment.Fixed - text.Max.X : text.Min.X - segment.Fixed;
-            double minSideGap = -width * 0.35;
+            double minSideGap = -width * 1.2;
             double maxSideGap = maxNearGap;
             if (sideGap < minSideGap || sideGap > maxSideGap)
             {
