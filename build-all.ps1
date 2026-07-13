@@ -12,8 +12,7 @@ $plugins = @(
   "LayerOffsetPlugin",
   "TextBoxSelectPlugin",
   "NumberTextHighlightPlugin",
-  "numreplace",
-  "beamnumsel"
+  "numreplace"
 )
 
 foreach ($plugin in $plugins) {
