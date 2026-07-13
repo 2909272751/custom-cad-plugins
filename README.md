@@ -18,7 +18,7 @@
 | `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/TextBoxSelectPlugin-v0.1.5-autocad2021.dll) |
 | `NumberTextHighlightPlugin` | `NUMRED` | 按大于、等于、小于条件把选定文字图层中的数字文字标红。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/NumberTextHighlightPlugin-v0.1.0-autocad2021.dll) |
 | `numreplace` | `NUMREPLACE` | 按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/numreplace-v0.1.1-autocad2021.dll) |
-| `beamnumsel` | `BEAMNUMSEL` | 按梁线图层和文字图层，选中水平梁线上方、竖向梁线左边的数字文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/beamnumsel-v0.1.0-autocad2021.dll) |
+| `beamnumsel` | `BEAMNUMSEL` | 按梁线图层和文字图层，选中横向梁线上方/下方、竖向梁线左侧/右侧的数字文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/beamnumsel-v0.1.1-autocad2021.dll) |
 
 ## 新手怎么用
 
@@ -166,4 +166,4 @@ Unblock-File "插件DLL完整路径"
 - `TextBoxSelectPlugin-v0.1.5-autocad2021.dll`
 - `NumberTextHighlightPlugin-v0.1.0-autocad2021.dll`
 - `numreplace-v0.1.1-autocad2021.dll`
-- `beamnumsel-v0.1.0-autocad2021.dll`
+- `beamnumsel-v0.1.1-autocad2021.dll`

@@ -14,6 +14,10 @@ namespace beamnumsel
     public class beamnumselCommand : IExtensionApplication
     {
         private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "BEAMNUMSEL.log");
+        private const string HorizontalAbove = "U";
+        private const string HorizontalBelow = "D";
+        private const string VerticalLeft = "L";
+        private const string VerticalRight = "R";
 
         public void Initialize()
         {
@@ -69,6 +73,27 @@ namespace beamnumsel
                     return;
                 }
 
+                PromptResult horizontalSideResult = PromptForHorizontalSide(ed);
+                if (horizontalSideResult.Status != PromptStatus.OK)
+                {
+                    logLines.Add("Horizontal side input cancelled: " + horizontalSideResult.Status);
+                    return;
+                }
+
+                PromptResult verticalSideResult = PromptForVerticalSide(ed);
+                if (verticalSideResult.Status != PromptStatus.OK)
+                {
+                    logLines.Add("Vertical side input cancelled: " + verticalSideResult.Status);
+                    return;
+                }
+
+                SelectionSide side = new SelectionSide
+                {
+                    HorizontalSide = horizontalSideResult.StringResult,
+                    VerticalSide = verticalSideResult.StringResult
+                };
+                logLines.Add("Horizontal side: " + side.HorizontalSide + ", vertical side: " + side.VerticalSide);
+
                 ed.WriteMessage("\n正在识别梁上数字...");
 
                 SelectStats stats;
@@ -76,7 +101,7 @@ namespace beamnumsel
                 {
                     HashSet<ObjectId> selectedIds = SelectionToSet(rangeResult.Value);
                     logLines.Add("Range selection object count: " + selectedIds.Count);
-                    stats = SelectMatchingTexts(tr, selectedIds, beamLayer, textLayer, logLines);
+                    stats = SelectMatchingTexts(tr, selectedIds, beamLayer, textLayer, side, logLines);
 
                     if (stats.MatchedTextIds.Count > 0)
                     {
@@ -90,7 +115,7 @@ namespace beamnumsel
 
                 ed.WriteMessage(
                     string.Format(
-                        "\n完成：共检查 {0} 个文字，识别数字 {1} 个，选中 {2} 个梁上数字。水平线上方 {3} 个，竖线左边 {4} 个。",
+                        "\n完成：共检查 {0} 个文字，识别数字 {1} 个，选中 {2} 个梁上数字。横向梁线 {3} 个，竖向梁线 {4} 个。",
                         stats.CheckedTextCount,
                         stats.ParsedNumberCount,
                         stats.MatchedTextIds.Count,
@@ -221,7 +246,27 @@ namespace beamnumsel
             return ed.GetSelection(options);
         }
 
-        private static SelectStats SelectMatchingTexts(Transaction tr, IEnumerable<ObjectId> selectedIds, string beamLayer, string textLayer, List<string> logLines)
+        private static PromptResult PromptForHorizontalSide(Editor ed)
+        {
+            PromptKeywordOptions options = new PromptKeywordOptions("\n请选择横向梁线要选哪一侧的数字 [上方(U)/下方(D)] <U>: ");
+            options.Keywords.Add(HorizontalAbove);
+            options.Keywords.Add(HorizontalBelow);
+            options.Keywords.Default = HorizontalAbove;
+            options.AllowNone = true;
+            return ed.GetKeywords(options);
+        }
+
+        private static PromptResult PromptForVerticalSide(Editor ed)
+        {
+            PromptKeywordOptions options = new PromptKeywordOptions("\n请选择竖向梁线要选哪一侧的数字 [左侧(L)/右侧(R)] <L>: ");
+            options.Keywords.Add(VerticalLeft);
+            options.Keywords.Add(VerticalRight);
+            options.Keywords.Default = VerticalLeft;
+            options.AllowNone = true;
+            return ed.GetKeywords(options);
+        }
+
+        private static SelectStats SelectMatchingTexts(Transaction tr, IEnumerable<ObjectId> selectedIds, string beamLayer, string textLayer, SelectionSide side, List<string> logLines)
         {
             SelectStats stats = new SelectStats();
             List<BeamSegment> segments = new List<BeamSegment>();
@@ -272,7 +317,7 @@ namespace beamnumsel
 
             foreach (TextInfo text in texts)
             {
-                MatchInfo match = FindBestMatch(text, segments);
+                MatchInfo match = FindBestMatch(text, segments, side);
                 if (match == null)
                 {
                     logLines.Add("NO MATCH text " + FormatObjectId(text.Id) + ": " + text.Text);
@@ -367,13 +412,13 @@ namespace beamnumsel
             }
         }
 
-        private static MatchInfo FindBestMatch(TextInfo text, List<BeamSegment> segments)
+        private static MatchInfo FindBestMatch(TextInfo text, List<BeamSegment> segments, SelectionSide side)
         {
             MatchInfo best = null;
 
             foreach (BeamSegment segment in segments)
             {
-                MatchInfo match = IsTextOnBeamNumberSide(text, segment);
+                MatchInfo match = IsTextOnBeamNumberSide(text, segment, side);
                 if (match == null)
                 {
                     continue;
@@ -388,7 +433,7 @@ namespace beamnumsel
             return best;
         }
 
-        private static MatchInfo IsTextOnBeamNumberSide(TextInfo text, BeamSegment segment)
+        private static MatchInfo IsTextOnBeamNumberSide(TextInfo text, BeamSegment segment, SelectionSide side)
         {
             double width = Math.Max(1e-9, Math.Abs(text.Max.X - text.Min.X));
             double height = Math.Max(1e-9, Math.Abs(text.Max.Y - text.Min.Y));
@@ -397,14 +442,20 @@ namespace beamnumsel
             {
                 double xTolerance = Math.Max(width * 0.8, segment.Length * 0.02);
                 bool overlapsX = text.Max.X >= segment.Min - xTolerance && text.Min.X <= segment.Max + xTolerance;
-                if (!overlapsX || text.Center.Y < segment.Fixed)
+                if (!overlapsX)
                 {
                     return null;
                 }
 
-                double gap = text.Min.Y - segment.Fixed;
+                bool wantsAbove = !string.Equals(side.HorizontalSide, HorizontalBelow, StringComparison.OrdinalIgnoreCase);
+                if ((wantsAbove && text.Center.Y < segment.Fixed) || (!wantsAbove && text.Center.Y > segment.Fixed))
+                {
+                    return null;
+                }
+
+                double gap = wantsAbove ? text.Min.Y - segment.Fixed : segment.Fixed - text.Max.Y;
                 double minGap = -height * 0.35;
-                double maxGap = Math.Max(height * 2.5, segment.Length * 0.015);
+                double maxGap = height * 2.5;
                 if (gap < minGap || gap > maxGap)
                 {
                     return null;
@@ -420,15 +471,21 @@ namespace beamnumsel
 
             double yTolerance = Math.Max(height * 0.8, segment.Length * 0.02);
             bool overlapsY = text.Max.Y >= segment.Min - yTolerance && text.Min.Y <= segment.Max + yTolerance;
-            if (!overlapsY || text.Center.X > segment.Fixed)
+            if (!overlapsY)
             {
                 return null;
             }
 
-            double leftGap = segment.Fixed - text.Max.X;
-            double minLeftGap = -width * 0.35;
-            double maxLeftGap = Math.Max(width * 2.5, segment.Length * 0.015);
-            if (leftGap < minLeftGap || leftGap > maxLeftGap)
+            bool wantsLeft = !string.Equals(side.VerticalSide, VerticalRight, StringComparison.OrdinalIgnoreCase);
+            if ((wantsLeft && text.Center.X > segment.Fixed) || (!wantsLeft && text.Center.X < segment.Fixed))
+            {
+                return null;
+            }
+
+            double sideGap = wantsLeft ? segment.Fixed - text.Max.X : text.Min.X - segment.Fixed;
+            double minSideGap = -width * 0.35;
+            double maxSideGap = width * 2.5;
+            if (sideGap < minSideGap || sideGap > maxSideGap)
             {
                 return null;
             }
@@ -437,7 +494,7 @@ namespace beamnumsel
             {
                 Segment = segment,
                 Orientation = segment.Orientation,
-                Gap = Math.Abs(leftGap)
+                Gap = Math.Abs(sideGap)
             };
         }
 
@@ -715,6 +772,13 @@ namespace beamnumsel
             public SegmentOrientation Orientation { get; set; }
 
             public double Gap { get; set; }
+        }
+
+        private class SelectionSide
+        {
+            public string HorizontalSide { get; set; }
+
+            public string VerticalSide { get; set; }
         }
 
         private class SelectStats
