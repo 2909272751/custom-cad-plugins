@@ -15,7 +15,7 @@
 | `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向、是否删除原图和 offset 后颜色。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/LayerOffsetPlugin-v0.1.1-autocad2021.dll) |
 | `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/TextBoxSelectPlugin-v0.1.5-autocad2021.dll) |
 | `NumberTextHighlightPlugin` | `NUMRED` | 按大于、等于、小于条件把选定文字图层中的数字文字标红。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/NumberTextHighlightPlugin-v0.1.0-autocad2021.dll) |
-| `numreplace` | `NUMREPLACE` | 按条件批量替换选定文字图层中的数字文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/numreplace-v0.1.0-autocad2021.dll) |
+| `numreplace` | `NUMREPLACE` | 按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/numreplace-v0.1.1-autocad2021.dll) |
 
 ## 新手怎么用
 
@@ -55,7 +55,7 @@ HATCHPL
 | [`LayerOffsetPlugin`](./LayerOffsetPlugin/README.md) | `LOFFSET` 的详细使用步骤、图层确认、框选范围和 offset 说明 |
 | [`TextBoxSelectPlugin`](./TextBoxSelectPlugin/README.md) | `TXTBOXSEL` 的详细使用步骤、框线图层、文字图层和识别规则说明 |
 | [`NumberTextHighlightPlugin`](./NumberTextHighlightPlugin/README.md) | `NUMRED` 的详细使用步骤、数字识别规则和日志说明 |
-| [`numreplace`](./numreplace/README.md) | `NUMREPLACE` 的详细使用步骤、区间匹配、替换规则和日志说明 |
+| [`numreplace`](./numreplace/README.md) | `NUMREPLACE` 的详细使用步骤、区间匹配、固定值/区间随机替换规则和日志说明 |
 
 ## 目录结构
 
@@ -155,4 +155,4 @@ Unblock-File "插件DLL完整路径"
 - `LayerOffsetPlugin-v0.1.1-autocad2021.dll`
 - `TextBoxSelectPlugin-v0.1.5-autocad2021.dll`
 - `NumberTextHighlightPlugin-v0.1.0-autocad2021.dll`
-- `numreplace-v0.1.0-autocad2021.dll`
+- `numreplace-v0.1.1-autocad2021.dll`

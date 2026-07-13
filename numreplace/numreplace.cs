@@ -16,6 +16,8 @@ namespace numreplace
         private const string ConditionEqual = "E";
         private const string ConditionLess = "L";
         private const string ConditionRange = "R";
+        private const string ReplaceFixed = "F";
+        private const string ReplaceRange = "R";
         private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "NUMREPLACE.log");
         private static readonly Random Random = new Random();
 
@@ -89,22 +91,22 @@ namespace numreplace
                 bool preserveDecimals = !string.Equals(preserveDecimalsResult.StringResult, "N", StringComparison.OrdinalIgnoreCase);
                 logLines.Add("Preserve decimals: " + preserveDecimals);
 
-                NumberInput replaceMinInput;
-                if (!PromptForNumber(ed, "\n\u8bf7\u8f93\u5165\u66ff\u6362\u540e\u7684\u6700\u5c0f\u503c: ", out replaceMinInput))
+                PromptResult replaceModeResult = PromptForReplaceMode(ed);
+                if (replaceModeResult.Status != PromptStatus.OK)
                 {
-                    logLines.Add("Replacement min input cancelled.");
+                    logLines.Add("Replacement mode input cancelled: " + replaceModeResult.Status);
                     return;
                 }
 
-                NumberInput replaceMaxInput;
-                if (!PromptForNumber(ed, "\n\u8bf7\u8f93\u5165\u66ff\u6362\u540e\u7684\u6700\u5927\u503c: ", out replaceMaxInput))
+                string replaceMode = replaceModeResult.StringResult;
+                ReplacementSpec replacementSpec;
+                if (!PromptForReplacementSpec(ed, replaceMode, out replacementSpec))
                 {
-                    logLines.Add("Replacement max input cancelled.");
+                    logLines.Add("Replacement value input cancelled.");
                     return;
                 }
 
-                ReplacementRange replacementRange = CreateReplacementRange(replaceMinInput, replaceMaxInput);
-                logLines.Add("Replacement range: " + replacementRange.Min.ToString(CultureInfo.InvariantCulture) + " to " + replacementRange.Max.ToString(CultureInfo.InvariantCulture));
+                logLines.Add(DescribeReplacementSpec(replacementSpec));
 
                 ed.WriteMessage("\n\u6b63\u5728\u5904\u7406\u6587\u5b57...");
 
@@ -113,7 +115,7 @@ namespace numreplace
                 {
                     HashSet<ObjectId> selectedIds = SelectionToSet(rangeResult.Value);
                     logLines.Add("Range selection object count: " + selectedIds.Count);
-                    stats = ApplyReplacement(tr, selectedIds, textLayer, targetRule, replacementRange, preserveDecimals, logLines);
+                    stats = ApplyReplacement(tr, selectedIds, textLayer, targetRule, replacementSpec, preserveDecimals, logLines);
                     tr.Commit();
                 }
 
@@ -292,12 +294,69 @@ namespace numreplace
             return ed.GetKeywords(options);
         }
 
+        private static PromptResult PromptForReplaceMode(Editor ed)
+        {
+            PromptKeywordOptions options = new PromptKeywordOptions("\n\u8bf7\u9009\u62e9\u66ff\u6362\u65b9\u5f0f [\u56fa\u5b9a\u503c(F)/\u533a\u95f4\u968f\u673a(R)] <F>: ");
+            options.Keywords.Add(ReplaceFixed);
+            options.Keywords.Add(ReplaceRange);
+            options.Keywords.Default = ReplaceFixed;
+            options.AllowNone = true;
+            return ed.GetKeywords(options);
+        }
+
+        private static bool PromptForReplacementSpec(Editor ed, string replaceMode, out ReplacementSpec replacementSpec)
+        {
+            replacementSpec = null;
+
+            if (string.Equals(replaceMode, ReplaceRange, StringComparison.OrdinalIgnoreCase))
+            {
+                NumberInput replaceMinInput;
+                if (!PromptForNumber(ed, "\n\u8bf7\u8f93\u5165\u66ff\u6362\u540e\u7684\u6700\u5c0f\u503c: ", out replaceMinInput))
+                {
+                    return false;
+                }
+
+                NumberInput replaceMaxInput;
+                if (!PromptForNumber(ed, "\n\u8bf7\u8f93\u5165\u66ff\u6362\u540e\u7684\u6700\u5927\u503c: ", out replaceMaxInput))
+                {
+                    return false;
+                }
+
+                ReplacementRange range = CreateReplacementRange(replaceMinInput, replaceMaxInput);
+                replacementSpec = new ReplacementSpec
+                {
+                    IsFixed = false,
+                    FixedValue = 0.0,
+                    Min = range.Min,
+                    Max = range.Max,
+                    DecimalPlaces = range.DecimalPlaces
+                };
+                return true;
+            }
+
+            NumberInput fixedInput;
+            if (!PromptForNumber(ed, "\n\u8bf7\u8f93\u5165\u66ff\u6362\u540e\u7684\u56fa\u5b9a\u6570\u503c: ", out fixedInput))
+            {
+                return false;
+            }
+
+            replacementSpec = new ReplacementSpec
+            {
+                IsFixed = true,
+                FixedValue = fixedInput.Value,
+                Min = fixedInput.Value,
+                Max = fixedInput.Value,
+                DecimalPlaces = fixedInput.DecimalPlaces
+            };
+            return true;
+        }
+
         private static ReplaceStats ApplyReplacement(
             Transaction tr,
             IEnumerable<ObjectId> selectedIds,
             string textLayer,
             TargetRule targetRule,
-            ReplacementRange replacementRange,
+            ReplacementSpec replacementSpec,
             bool preserveDecimals,
             List<string> logLines)
         {
@@ -331,8 +390,8 @@ namespace numreplace
                     continue;
                 }
 
-                int decimalPlaces = preserveDecimals ? originalDecimalPlaces : replacementRange.DecimalPlaces;
-                string newText = CreateReplacementText(replacementRange, decimalPlaces);
+                int decimalPlaces = preserveDecimals ? originalDecimalPlaces : replacementSpec.DecimalPlaces;
+                string newText = CreateReplacementText(replacementSpec, decimalPlaces);
 
                 Entity writable = (Entity)tr.GetObject(id, OpenMode.ForWrite, false);
                 SetTextString(writable, newText);
@@ -376,23 +435,48 @@ namespace numreplace
             };
         }
 
-        private static string CreateReplacementText(ReplacementRange range, int decimalPlaces)
+        private static string DescribeReplacementSpec(ReplacementSpec replacementSpec)
         {
+            if (replacementSpec.IsFixed)
+            {
+                return "Replacement mode: fixed, value=" + replacementSpec.FixedValue.ToString(CultureInfo.InvariantCulture);
+            }
+
+            return "Replacement mode: range, min=" + replacementSpec.Min.ToString(CultureInfo.InvariantCulture) + ", max=" + replacementSpec.Max.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static string CreateReplacementText(ReplacementSpec replacementSpec, int decimalPlaces)
+        {
+            if (replacementSpec.IsFixed)
+            {
+                return FormatNumber(replacementSpec.FixedValue, decimalPlaces);
+            }
+
             if (decimalPlaces <= 0)
             {
-                int min = (int)Math.Ceiling(range.Min);
-                int max = (int)Math.Floor(range.Max);
+                int min = (int)Math.Ceiling(replacementSpec.Min);
+                int max = (int)Math.Floor(replacementSpec.Max);
                 if (max < min)
                 {
-                    double value = range.Min + Random.NextDouble() * (range.Max - range.Min);
-                    return Math.Round(value, 0).ToString("0", CultureInfo.InvariantCulture);
+                    double value = replacementSpec.Min + Random.NextDouble() * (replacementSpec.Max - replacementSpec.Min);
+                    return FormatNumber(value, 0);
                 }
 
                 return Random.Next(min, max + 1).ToString(CultureInfo.InvariantCulture);
             }
 
-            double randomValue = range.Min + Random.NextDouble() * (range.Max - range.Min);
-            double rounded = Math.Round(randomValue, decimalPlaces);
+            double randomValue = replacementSpec.Min + Random.NextDouble() * (replacementSpec.Max - replacementSpec.Min);
+            return FormatNumber(randomValue, decimalPlaces);
+        }
+
+        private static string FormatNumber(double value, int decimalPlaces)
+        {
+            if (decimalPlaces <= 0)
+            {
+                return Math.Round(value, 0).ToString("0", CultureInfo.InvariantCulture);
+            }
+
+            double rounded = Math.Round(value, decimalPlaces);
             string format = "0." + new string('0', decimalPlaces);
             return rounded.ToString(format, CultureInfo.InvariantCulture);
         }
@@ -612,6 +696,19 @@ namespace numreplace
 
         private class ReplacementRange
         {
+            public double Min { get; set; }
+
+            public double Max { get; set; }
+
+            public int DecimalPlaces { get; set; }
+        }
+
+        private class ReplacementSpec
+        {
+            public bool IsFixed { get; set; }
+
+            public double FixedValue { get; set; }
+
             public double Min { get; set; }
 
             public double Max { get; set; }
