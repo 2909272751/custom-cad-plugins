@@ -18,6 +18,7 @@ namespace beamnumsel
         private const string HorizontalBelow = "D";
         private const string VerticalLeft = "L";
         private const string VerticalRight = "R";
+        private const double OrientationToleranceRadians = Math.PI / 6.0;
 
         public void Initialize()
         {
@@ -309,6 +310,7 @@ namespace beamnumsel
                     text.Value = value;
                     texts.Add(text);
                     stats.ParsedNumberCount++;
+                    logLines.Add("TEXT " + FormatObjectId(id) + " value=" + value.ToString(CultureInfo.InvariantCulture) + ", rotation=" + text.Rotation.ToString(CultureInfo.InvariantCulture));
                 }
             }
 
@@ -437,9 +439,17 @@ namespace beamnumsel
         {
             double width = Math.Max(1e-9, Math.Abs(text.Max.X - text.Min.X));
             double height = Math.Max(1e-9, Math.Abs(text.Max.Y - text.Min.Y));
+            double shortSize = Math.Min(width, height);
+            double longSize = Math.Max(width, height);
+            double maxNearGap = Math.Max(shortSize * 3.5, longSize * 0.6);
 
             if (segment.Orientation == SegmentOrientation.Horizontal)
             {
+                if (!IsHorizontalText(text))
+                {
+                    return null;
+                }
+
                 double xTolerance = Math.Max(width * 0.8, segment.Length * 0.02);
                 bool overlapsX = text.Max.X >= segment.Min - xTolerance && text.Min.X <= segment.Max + xTolerance;
                 if (!overlapsX)
@@ -455,7 +465,7 @@ namespace beamnumsel
 
                 double gap = wantsAbove ? text.Min.Y - segment.Fixed : segment.Fixed - text.Max.Y;
                 double minGap = -height * 0.35;
-                double maxGap = height * 2.5;
+                double maxGap = maxNearGap;
                 if (gap < minGap || gap > maxGap)
                 {
                     return null;
@@ -467,6 +477,11 @@ namespace beamnumsel
                     Orientation = segment.Orientation,
                     Gap = Math.Abs(gap)
                 };
+            }
+
+            if (!IsVerticalText(text))
+            {
+                return null;
             }
 
             double yTolerance = Math.Max(height * 0.8, segment.Length * 0.02);
@@ -484,7 +499,7 @@ namespace beamnumsel
 
             double sideGap = wantsLeft ? segment.Fixed - text.Max.X : text.Min.X - segment.Fixed;
             double minSideGap = -width * 0.35;
-            double maxSideGap = width * 2.5;
+            double maxSideGap = maxNearGap;
             if (sideGap < minSideGap || sideGap > maxSideGap)
             {
                 return null;
@@ -496,6 +511,43 @@ namespace beamnumsel
                 Orientation = segment.Orientation,
                 Gap = Math.Abs(sideGap)
             };
+        }
+
+        private static bool IsHorizontalText(TextInfo text)
+        {
+            double angle = NormalizeAngleToHalfTurn(text.Rotation);
+            if (angle <= OrientationToleranceRadians || Math.Abs(Math.PI - angle) <= OrientationToleranceRadians)
+            {
+                return true;
+            }
+
+            double width = Math.Abs(text.Max.X - text.Min.X);
+            double height = Math.Abs(text.Max.Y - text.Min.Y);
+            return width >= height * 1.4;
+        }
+
+        private static bool IsVerticalText(TextInfo text)
+        {
+            double angle = NormalizeAngleToHalfTurn(text.Rotation);
+            if (Math.Abs((Math.PI / 2.0) - angle) <= OrientationToleranceRadians)
+            {
+                return true;
+            }
+
+            double width = Math.Abs(text.Max.X - text.Min.X);
+            double height = Math.Abs(text.Max.Y - text.Min.Y);
+            return height >= width * 1.4;
+        }
+
+        private static double NormalizeAngleToHalfTurn(double angle)
+        {
+            double result = angle % Math.PI;
+            if (result < 0.0)
+            {
+                result += Math.PI;
+            }
+
+            return result;
         }
 
         private static bool TryParseStrictNumber(string text, out double value)
@@ -558,19 +610,19 @@ namespace beamnumsel
             DBText dbText = entity as DBText;
             if (dbText != null)
             {
-                return CreateTextInfo(dbText, dbText.Position);
+                return CreateTextInfo(dbText, dbText.Position, dbText.Rotation);
             }
 
             MText mText = entity as MText;
             if (mText != null)
             {
-                return CreateTextInfo(mText, mText.Location);
+                return CreateTextInfo(mText, mText.Location, mText.Rotation);
             }
 
             return null;
         }
 
-        private static TextInfo CreateTextInfo(Entity entity, Point3d fallbackPoint)
+        private static TextInfo CreateTextInfo(Entity entity, Point3d fallbackPoint, double rotation)
         {
             try
             {
@@ -583,7 +635,8 @@ namespace beamnumsel
                 {
                     Center = center,
                     Min = new Point2d(extents.MinPoint.X, extents.MinPoint.Y),
-                    Max = new Point2d(extents.MaxPoint.X, extents.MaxPoint.Y)
+                    Max = new Point2d(extents.MaxPoint.X, extents.MaxPoint.Y),
+                    Rotation = rotation
                 };
             }
             catch
@@ -593,7 +646,8 @@ namespace beamnumsel
                 {
                     Center = fallback,
                     Min = fallback,
-                    Max = fallback
+                    Max = fallback,
+                    Rotation = rotation
                 };
             }
         }
@@ -763,6 +817,8 @@ namespace beamnumsel
             public Point2d Min { get; set; }
 
             public Point2d Max { get; set; }
+
+            public double Rotation { get; set; }
         }
 
         private class MatchInfo
