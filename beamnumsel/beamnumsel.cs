@@ -13,12 +13,20 @@ namespace beamnumsel
 {
     public class beamnumselCommand : IExtensionApplication
     {
-        private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "BEAMNUMSEL.log");
-        private const string HorizontalAbove = "U";
-        private const string HorizontalBelow = "D";
-        private const string VerticalLeft = "L";
-        private const string VerticalRight = "R";
+        private const string DirectionHorizontal = "H";
+        private const string DirectionVertical = "V";
+        private const string DirectionAll = "A";
+        private const string SideUp = "U";
+        private const string SideDown = "D";
+        private const string SideLeft = "L";
+        private const string SideRight = "R";
+        private const string SideBoth = "B";
+        private const string ConfirmYes = "Y";
+        private const string ConfirmNo = "N";
+        private const string ConfirmDistance = "D";
         private const double OrientationToleranceRadians = Math.PI / 6.0;
+        private const double DefaultMaxDistance = 50.0;
+        private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "BEAMNUMSEL.log");
 
         public void Initialize()
         {
@@ -39,21 +47,22 @@ namespace beamnumsel
 
             Database db = doc.Database;
             Editor ed = doc.Editor;
-            List<ObjectId> highlightedIds = new List<ObjectId>();
+            List<ObjectId> layerHighlightIds = new List<ObjectId>();
+            List<ObjectId> previewHighlightIds = new List<ObjectId>();
             List<string> logLines = new List<string>();
-            logLines.Add("BEAMNUMSEL started: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            logLines.Add("BEAMNUMSEL v0.2.0 started: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             try
             {
                 string beamLayer;
                 List<ObjectId> beamLayerIds;
-                if (!PromptAndConfirmLayer(db, ed, "\n请选择一条梁线，用于确定梁线图层: ", "\n是否确认使用该梁线图层 [是(Y)/否(N)] <Y>: ", "BEAMNUMSEL", out beamLayer, out beamLayerIds))
+                if (!PromptAndConfirmLayer(db, ed, "\n请选择梁线图层上的一条梁线: ", "\n是否确认使用该梁线图层 [是(Y)/否(N)] <Y>: ", "BEAMNUMSEL", out beamLayer, out beamLayerIds))
                 {
                     logLines.Add("Beam layer selection cancelled.");
                     return;
                 }
 
-                highlightedIds.AddRange(beamLayerIds);
+                layerHighlightIds.AddRange(beamLayerIds);
                 logLines.Add("Beam layer: " + beamLayer + ", entities in current space: " + beamLayerIds.Count);
 
                 string textLayer;
@@ -64,8 +73,14 @@ namespace beamnumsel
                     return;
                 }
 
-                highlightedIds.AddRange(textLayerIds);
+                layerHighlightIds.AddRange(textLayerIds);
                 logLines.Add("Text layer: " + textLayer + ", text objects in current space: " + textLayerIds.Count);
+
+                RecognitionOptions options;
+                if (!PromptForRecognitionOptions(ed, out options, logLines))
+                {
+                    return;
+                }
 
                 PromptSelectionResult rangeResult = PromptForRange(ed);
                 if (rangeResult.Status != PromptStatus.OK)
@@ -74,54 +89,75 @@ namespace beamnumsel
                     return;
                 }
 
-                PromptResult horizontalSideResult = PromptForHorizontalSide(ed);
-                if (horizontalSideResult.Status != PromptStatus.OK)
+                HashSet<ObjectId> selectedIds = SelectionToSet(rangeResult.Value);
+                logLines.Add("Range selection object count: " + selectedIds.Count);
+
+                while (true)
                 {
-                    logLines.Add("Horizontal side input cancelled: " + horizontalSideResult.Status);
-                    return;
-                }
+                    UnhighlightEntities(db, previewHighlightIds);
+                    previewHighlightIds.Clear();
+                    ed.SetImpliedSelection(new ObjectId[0]);
 
-                PromptResult verticalSideResult = PromptForVerticalSide(ed);
-                if (verticalSideResult.Status != PromptStatus.OK)
-                {
-                    logLines.Add("Vertical side input cancelled: " + verticalSideResult.Status);
-                    return;
-                }
-
-                SelectionSide side = new SelectionSide
-                {
-                    HorizontalSide = horizontalSideResult.StringResult,
-                    VerticalSide = verticalSideResult.StringResult
-                };
-                logLines.Add("Horizontal side: " + side.HorizontalSide + ", vertical side: " + side.VerticalSide);
-
-                ed.WriteMessage("\n正在识别梁上数字...");
-
-                SelectStats stats;
-                using (Transaction tr = db.TransactionManager.StartTransaction())
-                {
-                    HashSet<ObjectId> selectedIds = SelectionToSet(rangeResult.Value);
-                    logLines.Add("Range selection object count: " + selectedIds.Count);
-                    stats = SelectMatchingTexts(tr, selectedIds, beamLayer, textLayer, side, logLines);
-
-                    if (stats.MatchedTextIds.Count > 0)
+                    SelectStats stats;
+                    using (Transaction tr = db.TransactionManager.StartTransaction())
                     {
-                        ed.SetImpliedSelection(stats.MatchedTextIds.ToArray());
-                        HighlightEntities(tr, stats.MatchedTextIds, true);
-                        highlightedIds.AddRange(stats.MatchedTextIds);
+                        stats = SelectMatchingTexts(tr, selectedIds, beamLayer, textLayer, options, logLines);
+                        if (stats.MatchedTextIds.Count > 0)
+                        {
+                            ed.SetImpliedSelection(stats.MatchedTextIds.ToArray());
+                            HighlightEntities(tr, stats.MatchedTextIds, true);
+                            previewHighlightIds.AddRange(stats.MatchedTextIds);
+                        }
+
+                        tr.Commit();
                     }
 
-                    tr.Commit();
-                }
+                    ed.WriteMessage(
+                        string.Format(
+                            "\n完成预览：共检查 {0} 个文字，识别数字 {1} 个，预选 {2} 个。横向 {3} 个，竖向 {4} 个。",
+                            stats.CheckedTextCount,
+                            stats.ParsedNumberCount,
+                            stats.MatchedTextIds.Count,
+                            stats.HorizontalCount,
+                            stats.VerticalCount));
 
-                ed.WriteMessage(
-                    string.Format(
-                        "\n完成：共检查 {0} 个文字，识别数字 {1} 个，选中 {2} 个梁上数字。横向梁线 {3} 个，竖向梁线 {4} 个。",
-                        stats.CheckedTextCount,
-                        stats.ParsedNumberCount,
-                        stats.MatchedTextIds.Count,
-                        stats.HorizontalAboveCount,
-                        stats.VerticalLeftCount));
+                    PromptResult confirmResult = PromptForPreviewConfirm(ed);
+                    if (confirmResult.Status != PromptStatus.OK)
+                    {
+                        logLines.Add("Preview confirmation cancelled: " + confirmResult.Status);
+                        ed.SetImpliedSelection(new ObjectId[0]);
+                        UnhighlightEntities(db, previewHighlightIds);
+                        previewHighlightIds.Clear();
+                        return;
+                    }
+
+                    string confirm = confirmResult.StringResult;
+                    if (string.Equals(confirm, ConfirmDistance, StringComparison.OrdinalIgnoreCase))
+                    {
+                        double newDistance;
+                        if (!PromptForMaxDistance(ed, options.MaxDistance, out newDistance))
+                        {
+                            logLines.Add("Adjust distance cancelled.");
+                            return;
+                        }
+
+                        options.MaxDistance = newDistance;
+                        logLines.Add("Adjusted max distance: " + options.MaxDistance.ToString(CultureInfo.InvariantCulture));
+                        continue;
+                    }
+
+                    if (string.Equals(confirm, ConfirmNo, StringComparison.OrdinalIgnoreCase))
+                    {
+                        logLines.Add("Preview rejected.");
+                        ed.SetImpliedSelection(new ObjectId[0]);
+                        UnhighlightEntities(db, previewHighlightIds);
+                        previewHighlightIds.Clear();
+                        return;
+                    }
+
+                    logLines.Add("Preview accepted. Final selection count: " + stats.MatchedTextIds.Count);
+                    return;
+                }
             }
             catch (System.Exception ex)
             {
@@ -131,7 +167,8 @@ namespace beamnumsel
             finally
             {
                 WriteLog(logLines);
-                UnhighlightEntities(db, highlightedIds);
+                UnhighlightEntities(db, layerHighlightIds);
+                UnhighlightEntities(db, previewHighlightIds);
             }
         }
 
@@ -145,6 +182,137 @@ namespace beamnumsel
             }
 
             doc.Editor.WriteMessage("\nBEAMNUMSEL log: " + LogPath);
+        }
+
+        private static bool PromptForRecognitionOptions(Editor ed, out RecognitionOptions options, List<string> logLines)
+        {
+            options = new RecognitionOptions();
+
+            PromptResult directionResult = PromptForDirection(ed);
+            if (directionResult.Status != PromptStatus.OK)
+            {
+                logLines.Add("Direction input cancelled: " + directionResult.Status);
+                return false;
+            }
+
+            options.Direction = directionResult.StringResult;
+
+            if (options.IncludeHorizontal)
+            {
+                PromptResult horizontalSideResult = PromptForHorizontalSide(ed);
+                if (horizontalSideResult.Status != PromptStatus.OK)
+                {
+                    logLines.Add("Horizontal side input cancelled: " + horizontalSideResult.Status);
+                    return false;
+                }
+
+                options.HorizontalSide = horizontalSideResult.StringResult;
+            }
+            else
+            {
+                options.HorizontalSide = SideBoth;
+            }
+
+            if (options.IncludeVertical)
+            {
+                PromptResult verticalSideResult = PromptForVerticalSide(ed);
+                if (verticalSideResult.Status != PromptStatus.OK)
+                {
+                    logLines.Add("Vertical side input cancelled: " + verticalSideResult.Status);
+                    return false;
+                }
+
+                options.VerticalSide = verticalSideResult.StringResult;
+            }
+            else
+            {
+                options.VerticalSide = SideBoth;
+            }
+
+            double maxDistance;
+            if (!PromptForMaxDistance(ed, DefaultMaxDistance, out maxDistance))
+            {
+                logLines.Add("Max distance input cancelled.");
+                return false;
+            }
+
+            options.MaxDistance = maxDistance;
+            logLines.Add("Direction: " + options.Direction + ", horizontal side: " + options.HorizontalSide + ", vertical side: " + options.VerticalSide + ", max distance: " + options.MaxDistance.ToString(CultureInfo.InvariantCulture));
+            return true;
+        }
+
+        private static PromptResult PromptForDirection(Editor ed)
+        {
+            PromptKeywordOptions options = new PromptKeywordOptions("\n请选择识别方向 [横向(H)/竖向(V)/全部(A)] <A>: ");
+            options.Keywords.Add(DirectionHorizontal);
+            options.Keywords.Add(DirectionVertical);
+            options.Keywords.Add(DirectionAll);
+            options.Keywords.Default = DirectionAll;
+            options.AllowNone = true;
+            return ed.GetKeywords(options);
+        }
+
+        private static PromptResult PromptForHorizontalSide(Editor ed)
+        {
+            PromptKeywordOptions options = new PromptKeywordOptions("\n横向梁线选择哪侧数字 [上方(U)/下方(D)/两侧(B)] <U>: ");
+            options.Keywords.Add(SideUp);
+            options.Keywords.Add(SideDown);
+            options.Keywords.Add(SideBoth);
+            options.Keywords.Default = SideUp;
+            options.AllowNone = true;
+            return ed.GetKeywords(options);
+        }
+
+        private static PromptResult PromptForVerticalSide(Editor ed)
+        {
+            PromptKeywordOptions options = new PromptKeywordOptions("\n竖向梁线选择哪侧数字 [左侧(L)/右侧(R)/两侧(B)] <L>: ");
+            options.Keywords.Add(SideLeft);
+            options.Keywords.Add(SideRight);
+            options.Keywords.Add(SideBoth);
+            options.Keywords.Default = SideLeft;
+            options.AllowNone = true;
+            return ed.GetKeywords(options);
+        }
+
+        private static bool PromptForMaxDistance(Editor ed, double defaultDistance, out double maxDistance)
+        {
+            maxDistance = defaultDistance;
+            PromptDoubleOptions options = new PromptDoubleOptions("\n请输入最大识别距离 <" + defaultDistance.ToString("0.##", CultureInfo.InvariantCulture) + ">: ");
+            options.AllowNone = true;
+            options.AllowNegative = false;
+            options.AllowZero = false;
+            PromptDoubleResult result = ed.GetDouble(options);
+            if (result.Status == PromptStatus.None)
+            {
+                return true;
+            }
+
+            if (result.Status != PromptStatus.OK)
+            {
+                return false;
+            }
+
+            maxDistance = result.Value;
+            return true;
+        }
+
+        private static PromptResult PromptForPreviewConfirm(Editor ed)
+        {
+            PromptKeywordOptions options = new PromptKeywordOptions("\n是否确认选中这些数字 [是(Y)/否(N)/调整距离(D)] <Y>: ");
+            options.Keywords.Add(ConfirmYes);
+            options.Keywords.Add(ConfirmNo);
+            options.Keywords.Add(ConfirmDistance);
+            options.Keywords.Default = ConfirmYes;
+            options.AllowNone = true;
+            return ed.GetKeywords(options);
+        }
+
+        private static PromptSelectionResult PromptForRange(Editor ed)
+        {
+            PromptSelectionOptions options = new PromptSelectionOptions();
+            options.MessageForAdding = "\n请框选需要识别的梁和数字范围: ";
+            options.AllowDuplicates = false;
+            return ed.GetSelection(options);
         }
 
         private static bool PromptAndConfirmLayer(Database db, Editor ed, string pickMessage, string confirmMessage, string commandName, out string layerName, out List<ObjectId> layerIds)
@@ -178,12 +346,12 @@ namespace beamnumsel
             ed.WriteMessage(string.Format("\n已选择图层：{0}，当前空间共找到 {1} 个对象。", layerName, layerIds.Count));
 
             PromptKeywordOptions confirmOptions = new PromptKeywordOptions(confirmMessage);
-            confirmOptions.Keywords.Add("Y");
-            confirmOptions.Keywords.Add("N");
-            confirmOptions.Keywords.Default = "Y";
+            confirmOptions.Keywords.Add(ConfirmYes);
+            confirmOptions.Keywords.Add(ConfirmNo);
+            confirmOptions.Keywords.Default = ConfirmYes;
             confirmOptions.AllowNone = true;
             PromptResult confirmResult = ed.GetKeywords(confirmOptions);
-            if (confirmResult.Status != PromptStatus.OK || string.Equals(confirmResult.StringResult, "N", StringComparison.OrdinalIgnoreCase))
+            if (confirmResult.Status != PromptStatus.OK || string.Equals(confirmResult.StringResult, ConfirmNo, StringComparison.OrdinalIgnoreCase))
             {
                 UnhighlightEntities(db, layerIds);
                 ed.WriteMessage("\n已取消，请重新执行 " + commandName + "。");
@@ -198,7 +366,7 @@ namespace beamnumsel
             textLayer = null;
             textLayerIds = new List<ObjectId>();
 
-            PromptEntityOptions pickOptions = new PromptEntityOptions("\n请选择一个数字文字，用于确定文字图层: ");
+            PromptEntityOptions pickOptions = new PromptEntityOptions("\n请选择数字文字图层上的一个文字: ");
             pickOptions.AllowNone = false;
             PromptEntityResult pickResult = ed.GetEntity(pickOptions);
             if (pickResult.Status != PromptStatus.OK)
@@ -224,12 +392,12 @@ namespace beamnumsel
             ed.WriteMessage(string.Format("\n已选择文字图层：{0}，当前空间共找到 {1} 个文字对象。", textLayer, textLayerIds.Count));
 
             PromptKeywordOptions confirmOptions = new PromptKeywordOptions("\n是否确认使用该文字图层 [是(Y)/否(N)] <Y>: ");
-            confirmOptions.Keywords.Add("Y");
-            confirmOptions.Keywords.Add("N");
-            confirmOptions.Keywords.Default = "Y";
+            confirmOptions.Keywords.Add(ConfirmYes);
+            confirmOptions.Keywords.Add(ConfirmNo);
+            confirmOptions.Keywords.Default = ConfirmYes;
             confirmOptions.AllowNone = true;
             PromptResult confirmResult = ed.GetKeywords(confirmOptions);
-            if (confirmResult.Status != PromptStatus.OK || string.Equals(confirmResult.StringResult, "N", StringComparison.OrdinalIgnoreCase))
+            if (confirmResult.Status != PromptStatus.OK || string.Equals(confirmResult.StringResult, ConfirmNo, StringComparison.OrdinalIgnoreCase))
             {
                 UnhighlightEntities(db, textLayerIds);
                 ed.WriteMessage("\n已取消，请重新执行 BEAMNUMSEL。");
@@ -239,35 +407,7 @@ namespace beamnumsel
             return true;
         }
 
-        private static PromptSelectionResult PromptForRange(Editor ed)
-        {
-            PromptSelectionOptions options = new PromptSelectionOptions();
-            options.MessageForAdding = "\n请框选需要识别的梁和数字范围: ";
-            options.AllowDuplicates = false;
-            return ed.GetSelection(options);
-        }
-
-        private static PromptResult PromptForHorizontalSide(Editor ed)
-        {
-            PromptKeywordOptions options = new PromptKeywordOptions("\n请选择横向梁线要选哪一侧的数字 [上方(U)/下方(D)] <U>: ");
-            options.Keywords.Add(HorizontalAbove);
-            options.Keywords.Add(HorizontalBelow);
-            options.Keywords.Default = HorizontalAbove;
-            options.AllowNone = true;
-            return ed.GetKeywords(options);
-        }
-
-        private static PromptResult PromptForVerticalSide(Editor ed)
-        {
-            PromptKeywordOptions options = new PromptKeywordOptions("\n请选择竖向梁线要选哪一侧的数字 [左侧(L)/右侧(R)] <L>: ");
-            options.Keywords.Add(VerticalLeft);
-            options.Keywords.Add(VerticalRight);
-            options.Keywords.Default = VerticalLeft;
-            options.AllowNone = true;
-            return ed.GetKeywords(options);
-        }
-
-        private static SelectStats SelectMatchingTexts(Transaction tr, IEnumerable<ObjectId> selectedIds, string beamLayer, string textLayer, SelectionSide side, List<string> logLines)
+        private static SelectStats SelectMatchingTexts(Transaction tr, IEnumerable<ObjectId> selectedIds, string beamLayer, string textLayer, RecognitionOptions options, List<string> logLines)
         {
             SelectStats stats = new SelectStats();
             List<BeamSegment> segments = new List<BeamSegment>();
@@ -283,7 +423,7 @@ namespace beamnumsel
 
                 if (string.Equals(entity.Layer, beamLayer, StringComparison.OrdinalIgnoreCase))
                 {
-                    AddBeamSegments(entity, id, segments, logLines);
+                    AddBeamSegments(entity, id, segments, options, logLines);
                     continue;
                 }
 
@@ -294,6 +434,7 @@ namespace beamnumsel
                     double value;
                     if (!TryParseStrictNumber(rawText, out value))
                     {
+                        stats.SkippedNonNumberCount++;
                         logLines.Add("SKIP non-number " + FormatObjectId(id) + ": " + rawText);
                         continue;
                     }
@@ -319,7 +460,7 @@ namespace beamnumsel
 
             foreach (TextInfo text in texts)
             {
-                MatchInfo match = FindBestMatch(text, segments, side);
+                MatchInfo match = FindBestMatch(text, segments, options, logLines);
                 if (match == null)
                 {
                     logLines.Add("NO MATCH text " + FormatObjectId(text.Id) + ": " + text.Text);
@@ -327,32 +468,33 @@ namespace beamnumsel
                 }
 
                 stats.MatchedTextIds.Add(text.Id);
-                if (match.Orientation == SegmentOrientation.Horizontal)
+                if (match.Segment.Orientation == SegmentOrientation.Horizontal)
                 {
-                    stats.HorizontalAboveCount++;
+                    stats.HorizontalCount++;
                 }
                 else
                 {
-                    stats.VerticalLeftCount++;
+                    stats.VerticalCount++;
                 }
 
                 logLines.Add(
                     "MATCH text " + FormatObjectId(text.Id) +
                     " value=" + text.Value.ToString(CultureInfo.InvariantCulture) +
-                    " -> " + match.Orientation +
+                    " -> " + match.Segment.Orientation +
                     " segment " + FormatObjectId(match.Segment.Id) +
-                    ", gap=" + match.Gap.ToString(CultureInfo.InvariantCulture));
+                    ", distance=" + match.Distance.ToString(CultureInfo.InvariantCulture) +
+                    ", overlap=" + match.ProjectionOverlap.ToString(CultureInfo.InvariantCulture));
             }
 
             return stats;
         }
 
-        private static void AddBeamSegments(Entity entity, ObjectId id, List<BeamSegment> segments, List<string> logLines)
+        private static void AddBeamSegments(Entity entity, ObjectId id, List<BeamSegment> segments, RecognitionOptions options, List<string> logLines)
         {
             Line line = entity as Line;
             if (line != null)
             {
-                AddBeamSegment(id, new Point2d(line.StartPoint.X, line.StartPoint.Y), new Point2d(line.EndPoint.X, line.EndPoint.Y), segments, logLines);
+                AddBeamSegment(id, new Point2d(line.StartPoint.X, line.StartPoint.Y), new Point2d(line.EndPoint.X, line.EndPoint.Y), segments, options);
                 return;
             }
 
@@ -363,36 +505,36 @@ namespace beamnumsel
                 int last = polyline.Closed ? count : count - 1;
                 for (int i = 0; i < last; i++)
                 {
-                    Point2d start = polyline.GetPoint2dAt(i);
-                    Point2d end = polyline.GetPoint2dAt((i + 1) % count);
                     if (Math.Abs(polyline.GetBulgeAt(i)) > 1e-9)
                     {
                         continue;
                     }
 
-                    AddBeamSegment(id, start, end, segments, logLines);
+                    Point2d start = polyline.GetPoint2dAt(i);
+                    Point2d end = polyline.GetPoint2dAt((i + 1) % count);
+                    AddBeamSegment(id, start, end, segments, options);
                 }
             }
         }
 
-        private static void AddBeamSegment(ObjectId id, Point2d start, Point2d end, List<BeamSegment> segments, List<string> logLines)
+        private static void AddBeamSegment(ObjectId id, Point2d start, Point2d end, List<BeamSegment> segments, RecognitionOptions options)
         {
             double dx = end.X - start.X;
             double dy = end.Y - start.Y;
             double length = Math.Sqrt(dx * dx + dy * dy);
-            if (length < 1e-9)
+            if (length < Math.Max(1e-6, options.MaxDistance * 1.2))
             {
                 return;
             }
 
             double axisTolerance = Math.Max(length * 0.02, 1e-8);
-            if (Math.Abs(dy) <= axisTolerance)
+            if (Math.Abs(dy) <= axisTolerance && options.IncludeHorizontal)
             {
                 segments.Add(new BeamSegment
                 {
                     Id = id,
                     Orientation = SegmentOrientation.Horizontal,
-                    Fixed = (start.Y + end.Y) / 2.0,
+                    Axis = (start.Y + end.Y) / 2.0,
                     Min = Math.Min(start.X, end.X),
                     Max = Math.Max(start.X, end.X),
                     Length = length
@@ -400,13 +542,13 @@ namespace beamnumsel
                 return;
             }
 
-            if (Math.Abs(dx) <= axisTolerance)
+            if (Math.Abs(dx) <= axisTolerance && options.IncludeVertical)
             {
                 segments.Add(new BeamSegment
                 {
                     Id = id,
                     Orientation = SegmentOrientation.Vertical,
-                    Fixed = (start.X + end.X) / 2.0,
+                    Axis = (start.X + end.X) / 2.0,
                     Min = Math.Min(start.Y, end.Y),
                     Max = Math.Max(start.Y, end.Y),
                     Length = length
@@ -414,19 +556,21 @@ namespace beamnumsel
             }
         }
 
-        private static MatchInfo FindBestMatch(TextInfo text, List<BeamSegment> segments, SelectionSide side)
+        private static MatchInfo FindBestMatch(TextInfo text, List<BeamSegment> segments, RecognitionOptions options, List<string> logLines)
         {
             MatchInfo best = null;
 
             foreach (BeamSegment segment in segments)
             {
-                MatchInfo match = IsTextOnBeamNumberSide(text, segment, side);
+                MatchInfo match = TryMatchTextToSegment(text, segment, options);
                 if (match == null)
                 {
                     continue;
                 }
 
-                if (best == null || match.Gap < best.Gap)
+                if (best == null ||
+                    match.Distance < best.Distance - 1e-9 ||
+                    (Math.Abs(match.Distance - best.Distance) <= 1e-9 && match.ProjectionOverlap > best.ProjectionOverlap))
                 {
                     best = match;
                 }
@@ -435,13 +579,10 @@ namespace beamnumsel
             return best;
         }
 
-        private static MatchInfo IsTextOnBeamNumberSide(TextInfo text, BeamSegment segment, SelectionSide side)
+        private static MatchInfo TryMatchTextToSegment(TextInfo text, BeamSegment segment, RecognitionOptions options)
         {
             double width = Math.Max(1e-9, Math.Abs(text.Max.X - text.Min.X));
             double height = Math.Max(1e-9, Math.Abs(text.Max.Y - text.Min.Y));
-            double shortSize = Math.Min(width, height);
-            double longSize = Math.Max(width, height);
-            double maxNearGap = Math.Max(shortSize * 3.5, longSize * 0.6);
 
             if (segment.Orientation == SegmentOrientation.Horizontal)
             {
@@ -450,23 +591,17 @@ namespace beamnumsel
                     return null;
                 }
 
-                double xTolerance = Math.Max(width * 0.8, segment.Length * 0.02);
-                bool overlapsX = text.Max.X >= segment.Min - xTolerance && text.Min.X <= segment.Max + xTolerance;
-                if (!overlapsX)
+                double overlap = GetOverlap(text.Min.X, text.Max.X, segment.Min, segment.Max);
+                double minOverlap = Math.Min(width * 0.35, segment.Length * 0.25);
+                double endTolerance = Math.Max(width * 0.7, options.MaxDistance * 0.5);
+                if (overlap < minOverlap && !IsIntervalNear(text.Min.X, text.Max.X, segment.Min, segment.Max, endTolerance))
                 {
                     return null;
                 }
 
-                bool wantsAbove = !string.Equals(side.HorizontalSide, HorizontalBelow, StringComparison.OrdinalIgnoreCase);
-                if ((wantsAbove && text.Max.Y < segment.Fixed) || (!wantsAbove && text.Min.Y > segment.Fixed))
-                {
-                    return null;
-                }
-
-                double gap = wantsAbove ? text.Min.Y - segment.Fixed : segment.Fixed - text.Max.Y;
-                double minGap = -height * 1.2;
-                double maxGap = maxNearGap;
-                if (gap < minGap || gap > maxGap)
+                double distance;
+                string side = GetHorizontalSide(text, segment.Axis, out distance);
+                if (!IsAllowedHorizontalSide(side, options.HorizontalSide) || distance > options.MaxDistance)
                 {
                     return null;
                 }
@@ -474,8 +609,8 @@ namespace beamnumsel
                 return new MatchInfo
                 {
                     Segment = segment,
-                    Orientation = segment.Orientation,
-                    Gap = Math.Abs(gap)
+                    Distance = distance,
+                    ProjectionOverlap = overlap
                 };
             }
 
@@ -484,23 +619,17 @@ namespace beamnumsel
                 return null;
             }
 
-            double yTolerance = Math.Max(height * 0.8, segment.Length * 0.02);
-            bool overlapsY = text.Max.Y >= segment.Min - yTolerance && text.Min.Y <= segment.Max + yTolerance;
-            if (!overlapsY)
+            double verticalOverlap = GetOverlap(text.Min.Y, text.Max.Y, segment.Min, segment.Max);
+            double minVerticalOverlap = Math.Min(height * 0.35, segment.Length * 0.25);
+            double verticalEndTolerance = Math.Max(height * 0.7, options.MaxDistance * 0.5);
+            if (verticalOverlap < minVerticalOverlap && !IsIntervalNear(text.Min.Y, text.Max.Y, segment.Min, segment.Max, verticalEndTolerance))
             {
                 return null;
             }
 
-            bool wantsLeft = !string.Equals(side.VerticalSide, VerticalRight, StringComparison.OrdinalIgnoreCase);
-            if ((wantsLeft && text.Min.X > segment.Fixed) || (!wantsLeft && text.Max.X < segment.Fixed))
-            {
-                return null;
-            }
-
-            double sideGap = wantsLeft ? segment.Fixed - text.Max.X : text.Min.X - segment.Fixed;
-            double minSideGap = -width * 1.2;
-            double maxSideGap = maxNearGap;
-            if (sideGap < minSideGap || sideGap > maxSideGap)
+            double sideDistance;
+            string verticalSide = GetVerticalSide(text, segment.Axis, out sideDistance);
+            if (!IsAllowedVerticalSide(verticalSide, options.VerticalSide) || sideDistance > options.MaxDistance)
             {
                 return null;
             }
@@ -508,9 +637,45 @@ namespace beamnumsel
             return new MatchInfo
             {
                 Segment = segment,
-                Orientation = segment.Orientation,
-                Gap = Math.Abs(sideGap)
+                Distance = sideDistance,
+                ProjectionOverlap = verticalOverlap
             };
+        }
+
+        private static string GetHorizontalSide(TextInfo text, double axis, out double distance)
+        {
+            if (text.Center.Y >= axis)
+            {
+                distance = Math.Max(0.0, text.Min.Y - axis);
+                return SideUp;
+            }
+
+            distance = Math.Max(0.0, axis - text.Max.Y);
+            return SideDown;
+        }
+
+        private static string GetVerticalSide(TextInfo text, double axis, out double distance)
+        {
+            if (text.Center.X <= axis)
+            {
+                distance = Math.Max(0.0, axis - text.Max.X);
+                return SideLeft;
+            }
+
+            distance = Math.Max(0.0, text.Min.X - axis);
+            return SideRight;
+        }
+
+        private static bool IsAllowedHorizontalSide(string actualSide, string allowedSide)
+        {
+            return string.Equals(allowedSide, SideBoth, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(actualSide, allowedSide, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsAllowedVerticalSide(string actualSide, string allowedSide)
+        {
+            return string.Equals(allowedSide, SideBoth, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(actualSide, allowedSide, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsHorizontalText(TextInfo text)
@@ -523,7 +688,7 @@ namespace beamnumsel
 
             double width = Math.Abs(text.Max.X - text.Min.X);
             double height = Math.Abs(text.Max.Y - text.Min.Y);
-            return width >= height * 1.4;
+            return width >= height * 1.25;
         }
 
         private static bool IsVerticalText(TextInfo text)
@@ -536,7 +701,7 @@ namespace beamnumsel
 
             double width = Math.Abs(text.Max.X - text.Min.X);
             double height = Math.Abs(text.Max.Y - text.Min.Y);
-            return height >= width * 1.4;
+            return height >= width * 1.25;
         }
 
         private static double NormalizeAngleToHalfTurn(double angle)
@@ -548,6 +713,16 @@ namespace beamnumsel
             }
 
             return result;
+        }
+
+        private static double GetOverlap(double minA, double maxA, double minB, double maxB)
+        {
+            return Math.Max(0.0, Math.Min(maxA, maxB) - Math.Max(minA, minB));
+        }
+
+        private static bool IsIntervalNear(double minA, double maxA, double minB, double maxB, double tolerance)
+        {
+            return maxA >= minB - tolerance && minA <= maxB + tolerance;
         }
 
         private static bool TryParseStrictNumber(string text, out double value)
@@ -789,13 +964,42 @@ namespace beamnumsel
             Vertical
         }
 
+        private class RecognitionOptions
+        {
+            public string Direction { get; set; }
+
+            public string HorizontalSide { get; set; }
+
+            public string VerticalSide { get; set; }
+
+            public double MaxDistance { get; set; }
+
+            public bool IncludeHorizontal
+            {
+                get
+                {
+                    return string.Equals(Direction, DirectionHorizontal, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(Direction, DirectionAll, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            public bool IncludeVertical
+            {
+                get
+                {
+                    return string.Equals(Direction, DirectionVertical, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(Direction, DirectionAll, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
+
         private class BeamSegment
         {
             public ObjectId Id { get; set; }
 
             public SegmentOrientation Orientation { get; set; }
 
-            public double Fixed { get; set; }
+            public double Axis { get; set; }
 
             public double Min { get; set; }
 
@@ -825,16 +1029,9 @@ namespace beamnumsel
         {
             public BeamSegment Segment { get; set; }
 
-            public SegmentOrientation Orientation { get; set; }
+            public double Distance { get; set; }
 
-            public double Gap { get; set; }
-        }
-
-        private class SelectionSide
-        {
-            public string HorizontalSide { get; set; }
-
-            public string VerticalSide { get; set; }
+            public double ProjectionOverlap { get; set; }
         }
 
         private class SelectStats
@@ -848,9 +1045,11 @@ namespace beamnumsel
 
             public int ParsedNumberCount { get; set; }
 
-            public int HorizontalAboveCount { get; set; }
+            public int SkippedNonNumberCount { get; set; }
 
-            public int VerticalLeftCount { get; set; }
+            public int HorizontalCount { get; set; }
+
+            public int VerticalCount { get; set; }
 
             public List<ObjectId> MatchedTextIds { get; private set; }
         }
