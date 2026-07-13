@@ -1,6 +1,6 @@
 # 自建 CAD 插件
 
-这个仓库是一个 AutoCAD 插件合集，目前包含 7 个彼此独立的插件。
+这个仓库是一个 AutoCAD 插件合集，目前包含 8 个彼此独立的插件。
 
 每个插件都有自己的源码、构建脚本、发布 DLL 和 README。你可以把它当成一个总项目管理，也可以单独进入某个插件目录查看说明、编译或加载。
 
@@ -8,7 +8,7 @@
 
 | 插件 | 命令 | 一句话功能 | 下载 |
 | --- | --- | --- | --- |
-| 简易说明 | - | 简短说明七个插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.1-简易说明）](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/custom-cad-plugins-v0.1.1-quick-guide.txt) |
+| 简易说明 | - | 简短说明八个插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.1-简易说明）](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/custom-cad-plugins-v0.1.1-quick-guide.txt) |
 | `OpeningOutlinePlugin` | `DKTRACE` | 根据开洞符号和边界图层，生成洞口闭合轮廓线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/OpeningOutlinePlugin-v0.1.1-autocad2022.dll) |
 | `OuterOutlinePlugin` | `PCOUTLINE` | 从楼层或构件边线中提取干净的外轮廓闭合线。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/OuterOutlinePlugin-v0.1.5-autocad2022.dll) |
 | `HatchOuterPolylinePlugin` | `HATCHPL` | 从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll) |
@@ -16,6 +16,7 @@
 | `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/TextBoxSelectPlugin-v0.1.5-autocad2021.dll) |
 | `NumberTextHighlightPlugin` | `NUMRED` | 按大于、等于、小于条件把选定文字图层中的数字文字标红。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/NumberTextHighlightPlugin-v0.1.0-autocad2021.dll) |
 | `numreplace` | `NUMREPLACE` | 按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/numreplace-v0.1.1-autocad2021.dll) |
+| `beamnumsel` | `BEAMNUMSEL` | 按梁线图层和文字图层，选中水平梁线上方、竖向梁线左边的数字文字。 | [下载 DLL](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.1/beamnumsel-v0.1.0-autocad2021.dll) |
 
 ## 新手怎么用
 
@@ -56,6 +57,7 @@ HATCHPL
 | [`TextBoxSelectPlugin`](./TextBoxSelectPlugin/README.md) | `TXTBOXSEL` 的详细使用步骤、框线图层、文字图层和识别规则说明 |
 | [`NumberTextHighlightPlugin`](./NumberTextHighlightPlugin/README.md) | `NUMRED` 的详细使用步骤、数字识别规则和日志说明 |
 | [`numreplace`](./numreplace/README.md) | `NUMREPLACE` 的详细使用步骤、区间匹配、固定值/区间随机替换规则和日志说明 |
+| [`beamnumsel`](./beamnumsel/README.md) | `BEAMNUMSEL` 的详细使用步骤、梁线图层、文字图层和识别规则说明 |
 
 ## 目录结构
 
@@ -96,6 +98,11 @@ HATCHPL
 └─ numreplace/
    ├─ README.md
    ├─ numreplace.cs
+   ├─ build.ps1
+   └─ dist/
+└─ beamnumsel/
+   ├─ README.md
+   ├─ beamnumsel.cs
    ├─ build.ps1
    └─ dist/
 ```
@@ -143,6 +150,7 @@ Unblock-File "插件DLL完整路径"
 | `TextBoxSelectPlugin` | `TXTBOXLOG` | `%TEMP%\TXTBOXSEL.log` |
 | `NumberTextHighlightPlugin` | `NUMREDLOG` | `%TEMP%\NUMRED.log` |
 | `numreplace` | `NUMREPLACELOG` | `%TEMP%\NUMREPLACE.log` |
+| `beamnumsel` | `BEAMNUMSELLOG` | `%TEMP%\BEAMNUMSEL.log` |
 
 ## Release
 
@@ -156,3 +164,4 @@ Unblock-File "插件DLL完整路径"
 - `TextBoxSelectPlugin-v0.1.5-autocad2021.dll`
 - `NumberTextHighlightPlugin-v0.1.0-autocad2021.dll`
 - `numreplace-v0.1.1-autocad2021.dll`
+- `beamnumsel-v0.1.0-autocad2021.dll`
