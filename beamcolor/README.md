@@ -17,7 +17,7 @@ AutoCAD 梁编号和梁线批量改色插件。
 2. 加载 DLL：
 
 ```text
-beamcolor-v0.1.7-autocad2021.dll
+beamcolor-v0.1.8-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -50,6 +50,7 @@ BEAMCOLOR
 - 同一个梁编号附近有多段横线或竖线时，会按线段到梁编号文字外包框的距离，在用户选择的目标图层中匹配最近的一组线段。
 - 如果预览漏线，把最大匹配距离调大；如果预览误判，把最大匹配距离调小。
 - `NO LINE` 时日志会记录目标图层候选线段数量、最近线段距离和过滤原因，用于判断是不是范围选择或几何过滤导致。
+- 多个编号前缀共用同一个目标图层时，目标线按图层共享，不会只归到第一个前缀规则。
 
 ## 日志
 
@@ -82,5 +83,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\beamcolor-v0.1.7-autocad2021.dll
+dist\beamcolor-v0.1.8-autocad2021.dll
 ```

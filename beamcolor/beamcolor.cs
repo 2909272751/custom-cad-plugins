@@ -475,7 +475,7 @@ namespace beamcolor
 
             foreach (BeamLineInfo line in lines)
             {
-                if (!object.ReferenceEquals(line.Rule, text.Rule))
+                if (!LineCanApplyToText(line, text))
                 {
                     continue;
                 }
@@ -516,6 +516,11 @@ namespace beamcolor
             return matched;
         }
 
+        private static bool LineCanApplyToText(BeamLineInfo line, BeamTextInfo text)
+        {
+            return string.Equals(line.Rule.TargetLayer, text.Rule.TargetLayer, StringComparison.OrdinalIgnoreCase);
+        }
+
         private static void LogNoLineDiagnostics(BeamTextInfo text, List<BeamLineInfo> lines, List<string> logLines)
         {
             List<LineCandidate> nearest = new List<LineCandidate>();
@@ -526,7 +531,7 @@ namespace beamcolor
 
             foreach (BeamLineInfo line in lines)
             {
-                if (!object.ReferenceEquals(line.Rule, text.Rule))
+                if (!LineCanApplyToText(line, text))
                 {
                     continue;
                 }
