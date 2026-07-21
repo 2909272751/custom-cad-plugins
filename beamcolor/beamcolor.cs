@@ -53,8 +53,8 @@ namespace beamcolor
                     }
 
                     rules.Add(rule);
-                    PromptResult moreResult = PromptForMoreRules(ed);
-                    if (moreResult.Status != PromptStatus.OK || string.Equals(moreResult.StringResult, ConfirmNo, StringComparison.OrdinalIgnoreCase))
+                    string moreAnswer;
+                    if (!PromptForMoreRules(ed, out moreAnswer) || string.Equals(moreAnswer, ConfirmNo, StringComparison.OrdinalIgnoreCase))
                     {
                         break;
                     }
@@ -85,8 +85,8 @@ namespace beamcolor
                         preview.LineIds.Count,
                         preview.SkippedTextCount));
 
-                PromptResult confirmResult = PromptForConfirmApply(ed);
-                if (confirmResult.Status != PromptStatus.OK || string.Equals(confirmResult.StringResult, ConfirmNo, StringComparison.OrdinalIgnoreCase))
+                string confirmAnswer;
+                if (!PromptForConfirmApply(ed, out confirmAnswer) || string.Equals(confirmAnswer, ConfirmNo, StringComparison.OrdinalIgnoreCase))
                 {
                     logLines.Add("Apply cancelled.");
                     return;
@@ -219,14 +219,9 @@ namespace beamcolor
             }
         }
 
-        private static PromptResult PromptForMoreRules(Editor ed)
+        private static bool PromptForMoreRules(Editor ed, out string answer)
         {
-            PromptKeywordOptions options = new PromptKeywordOptions("\n是否选择更多匹配编号开头规则 [是(Y)/否(N)] <N>: ");
-            options.Keywords.Add(ConfirmYes);
-            options.Keywords.Add(ConfirmNo);
-            options.Keywords.Default = ConfirmNo;
-            options.AllowNone = true;
-            return ed.GetKeywords(options);
+            return PromptForYesNo(ed, "\n是否选择更多匹配编号开头规则 [是(Y)/否(N)] <N>: ", ConfirmNo, out answer);
         }
 
         private static PromptSelectionResult PromptForRange(Editor ed)
@@ -237,14 +232,51 @@ namespace beamcolor
             return ed.GetSelection(options);
         }
 
-        private static PromptResult PromptForConfirmApply(Editor ed)
+        private static bool PromptForConfirmApply(Editor ed, out string answer)
         {
-            PromptKeywordOptions options = new PromptKeywordOptions("\n识别到的对象已高亮，是否确认修改 [是(Y)/否(N)] <Y>: ");
-            options.Keywords.Add(ConfirmYes);
-            options.Keywords.Add(ConfirmNo);
-            options.Keywords.Default = ConfirmYes;
-            options.AllowNone = true;
-            return ed.GetKeywords(options);
+            return PromptForYesNo(ed, "\n识别到的对象已高亮，是否确认修改 [是(Y)/否(N)] <Y>: ", ConfirmYes, out answer);
+        }
+
+        private static bool PromptForYesNo(Editor ed, string message, string defaultValue, out string answer)
+        {
+            answer = defaultValue;
+            while (true)
+            {
+                PromptStringOptions options = new PromptStringOptions(message);
+                options.AllowSpaces = false;
+                PromptResult result = ed.GetString(options);
+                if (result.Status == PromptStatus.None)
+                {
+                    answer = defaultValue;
+                    return true;
+                }
+
+                if (result.Status != PromptStatus.OK)
+                {
+                    return false;
+                }
+
+                string value = (result.StringResult ?? string.Empty).Trim().ToUpperInvariant();
+                if (value.Length == 0)
+                {
+                    answer = defaultValue;
+                    return true;
+                }
+
+                if (value == ConfirmYes || value == "YES" || value == "是")
+                {
+                    answer = ConfirmYes;
+                    return true;
+                }
+
+                if (value == ConfirmNo || value == "NO" || value == "否")
+                {
+                    answer = ConfirmNo;
+                    return true;
+                }
+
+                ed.WriteMessage("\n请输入 Y 或 N，也可以直接回车使用默认值。");
+            }
         }
 
         private static PreviewResult BuildPreview(Transaction tr, HashSet<ObjectId> selectedIds, List<ColorRule> rules, List<string> logLines)

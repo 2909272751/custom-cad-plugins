@@ -17,7 +17,7 @@ AutoCAD 梁编号和梁线批量改色插件。
 2. 加载 DLL：
 
 ```text
-beamcolor-v0.1.2-autocad2021.dll
+beamcolor-v0.1.3-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -37,6 +37,8 @@ BEAMCOLOR
 ## 匹配规则
 
 - 输入 `L` 时，只匹配 `L2(1)`、`L34(1)` 这种 `L + 数字`。
+- 编号前缀输入不区分大小写，输入 `l`、`kl` 会按 `L`、`KL` 处理。
+- 确认提示不区分大小写，输入 `y/n`、`Y/N` 都可以。
 - `LLK` 不会被 `L` 误匹配；如果要处理 `LLK`，请单独添加规则 `LLK`。
 - 输入 `KL` 时，匹配 `KL13(1)`、`KL38(2)`。
 - 只识别梁编号格式：英文字母 + 数字 + 可选括号，例如 `KL13(1)`、`L16(C)`。
@@ -76,5 +78,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\beamcolor-v0.1.2-autocad2021.dll
+dist\beamcolor-v0.1.3-autocad2021.dll
 ```
