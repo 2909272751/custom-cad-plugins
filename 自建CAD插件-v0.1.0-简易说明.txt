@@ -14,7 +14,7 @@
 - 如果下载的 DLL 加载时报“不支持操作”，右键 DLL -> 属性 -> 勾选“解除锁定”，再重新 NETLOAD。
 
 
-二、七个插件分别做什么
+二、八个插件分别做什么
 
 1. OpeningOutlinePlugin
    命令：DKTRACE
@@ -44,6 +44,10 @@
    命令：NUMREPLACE
    用途：按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。
 
+8. beamcolor
+   命令：BEAMCOLOR
+   用途：按梁编号前缀批量修改梁编号文字和对应梁线颜色，跳过截面尺寸和配筋文字。
+
 三、日志命令
 
 DKTRACE 出问题：输入 DKLOG
@@ -52,5 +56,6 @@ HATCHPL 出问题：输入 HATCHPLLOG
 TXTBOXSEL 出问题：输入 TXTBOXLOG
 NUMRED 出问题：输入 NUMREDLOG
 NUMREPLACE 出问题：输入 NUMREPLACELOG
+BEAMCOLOR 出问题：输入 BEAMCOLORLOG
 
 把日志文件发出来，方便定位问题。
