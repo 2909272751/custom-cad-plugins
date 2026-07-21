@@ -326,6 +326,8 @@ namespace beamcolor
             PreviewResult preview = new PreviewResult();
             List<BeamLineInfo> beamLines = new List<BeamLineInfo>();
             List<BeamTextInfo> beamTexts = new List<BeamTextInfo>();
+            Dictionary<string, int> selectedTargetLayerEntities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> unsupportedTargetLayerEntities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             foreach (ObjectId id in selectedIds)
             {
@@ -363,15 +365,24 @@ namespace beamcolor
                     continue;
                 }
 
-                if (IsCurveEntity(entity))
+                ColorRule lineRule = FindRuleForTargetLayer(entity.Layer, rules);
+                if (lineRule != null)
                 {
-                    ColorRule lineRule = FindRuleForTargetLayer(entity.Layer, rules);
-                    if (lineRule != null)
+                    AddCount(selectedTargetLayerEntities, entity.GetType().Name);
+                    if (IsCurveEntity(entity))
                     {
                         AddBeamLineInfos(entity, id, beamLines, lineRule);
                     }
+                    else if (!IsTextEntity(entity))
+                    {
+                        AddCount(unsupportedTargetLayerEntities, entity.GetType().Name);
+                    }
                 }
             }
+
+            logLines.Add("Target-layer selected entities: " + FormatCounts(selectedTargetLayerEntities));
+            logLines.Add("Target-layer unsupported entities: " + FormatCounts(unsupportedTargetLayerEntities));
+            logLines.Add("Target-layer line segments: " + beamLines.Count);
 
             foreach (BeamTextInfo text in beamTexts)
             {
@@ -395,6 +406,7 @@ namespace beamcolor
                 else
                 {
                     logLines.Add("NO LINE for text " + FormatObjectId(text.Id));
+                    LogNoLineDiagnostics(text, beamLines, logLines);
                 }
             }
 
@@ -502,6 +514,44 @@ namespace beamcolor
             }
 
             return matched;
+        }
+
+        private static void LogNoLineDiagnostics(BeamTextInfo text, List<BeamLineInfo> lines, List<string> logLines)
+        {
+            List<LineCandidate> nearest = new List<LineCandidate>();
+            int sameRuleCount = 0;
+            double textShortSize = Math.Max(Math.Min(text.Width, text.Height), 1.0);
+            double maxDistance = Math.Max(text.Rule.MaxLineDistance, 1.0);
+            double projectionTolerance = Math.Max(textShortSize * 1.5, Math.Min(maxDistance * 0.2, 300.0));
+
+            foreach (BeamLineInfo line in lines)
+            {
+                if (!object.ReferenceEquals(line.Rule, text.Rule))
+                {
+                    continue;
+                }
+
+                sameRuleCount++;
+                double boxDistance = line.DistanceToBox(text);
+                double centerDistance = line.DistanceTo(text.Center);
+                bool projectionNear = line.ProjectionNear(text, projectionTolerance);
+                bool boxNear = line.IntersectsExpandedBox(text, projectionTolerance);
+                string reason = boxDistance > maxDistance ? "too-far" : (!projectionNear && !boxNear ? "projection-filter" : "eligible");
+                nearest.Add(new LineCandidate(line, boxDistance, centerDistance, projectionNear, boxNear, reason));
+            }
+
+            nearest.Sort(delegate(LineCandidate a, LineCandidate b)
+            {
+                return a.Distance.CompareTo(b.Distance);
+            });
+
+            logLines.Add("NO LINE detail " + FormatObjectId(text.Id) + ": text=" + text.Text + ", sameRuleSegments=" + sameRuleCount + ", maxLineDistance=" + maxDistance.ToString(CultureInfo.InvariantCulture) + ", projectionTolerance=" + projectionTolerance.ToString(CultureInfo.InvariantCulture));
+            int count = Math.Min(5, nearest.Count);
+            for (int i = 0; i < count; i++)
+            {
+                LineCandidate candidate = nearest[i];
+                logLines.Add("NO LINE nearest " + (i + 1) + " for text " + FormatObjectId(text.Id) + ": line=" + FormatObjectId(candidate.Line.Id) + ", boxDistance=" + candidate.Distance.ToString(CultureInfo.InvariantCulture) + ", centerDistance=" + candidate.CenterDistance.ToString(CultureInfo.InvariantCulture) + ", projectionNear=" + candidate.ProjectionNear + ", boxNear=" + candidate.BoxNear + ", reason=" + candidate.Reason);
+            }
         }
 
         private static void ApplyColors(Transaction tr, PreviewResult preview, List<string> logLines)
@@ -745,6 +795,35 @@ namespace beamcolor
             return "RGB(" + color.Red + "," + color.Green + "," + color.Blue + ")";
         }
 
+        private static void AddCount(Dictionary<string, int> counts, string key)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                key = "(unknown)";
+            }
+
+            int current;
+            counts.TryGetValue(key, out current);
+            counts[key] = current + 1;
+        }
+
+        private static string FormatCounts(Dictionary<string, int> counts)
+        {
+            if (counts.Count == 0)
+            {
+                return "(none)";
+            }
+
+            List<string> parts = new List<string>();
+            foreach (KeyValuePair<string, int> item in counts)
+            {
+                parts.Add(item.Key + "=" + item.Value);
+            }
+
+            parts.Sort(StringComparer.OrdinalIgnoreCase);
+            return string.Join(", ", parts.ToArray());
+        }
+
         private static void WriteLog(IEnumerable<string> lines)
         {
             try
@@ -916,14 +995,31 @@ namespace beamcolor
         private class LineCandidate
         {
             public LineCandidate(BeamLineInfo line, double distance)
+                : this(line, distance, 0.0, false, false, string.Empty)
+            {
+            }
+
+            public LineCandidate(BeamLineInfo line, double distance, double centerDistance, bool projectionNear, bool boxNear, string reason)
             {
                 Line = line;
                 Distance = distance;
+                CenterDistance = centerDistance;
+                ProjectionNear = projectionNear;
+                BoxNear = boxNear;
+                Reason = reason;
             }
 
             public BeamLineInfo Line { get; private set; }
 
             public double Distance { get; private set; }
+
+            public double CenterDistance { get; private set; }
+
+            public bool ProjectionNear { get; private set; }
+
+            public bool BoxNear { get; private set; }
+
+            public string Reason { get; private set; }
         }
 
         private class PreviewResult
