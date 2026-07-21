@@ -43,16 +43,33 @@ namespace beamcolor
 
             try
             {
+                RuleSettings settings;
+                if (!PromptForRuleSettings(db, ed, out settings, logLines))
+                {
+                    return;
+                }
+
                 List<ColorRule> rules = new List<ColorRule>();
                 while (true)
                 {
-                    ColorRule rule;
-                    if (!PromptForRule(db, ed, rules.Count + 1, out rule, logLines))
+                    string prefix;
+                    if (!PromptForPrefix(ed, out prefix))
                     {
+                        logLines.Add("Prefix input cancelled.");
                         return;
                     }
 
+                    ColorRule rule = new ColorRule
+                    {
+                        Prefix = prefix,
+                        SourceLayer = settings.SourceLayer,
+                        TargetLayer = settings.TargetLayer,
+                        TargetColor = settings.TargetColor
+                    };
+
                     rules.Add(rule);
+                    logLines.Add("Rule " + rules.Count + ": prefix=" + prefix + ", sourceLayer=" + settings.SourceLayer + ", targetLayer=" + settings.TargetLayer + ", color=" + DescribeColor(settings.TargetColor));
+
                     string moreAnswer;
                     if (!PromptForMoreRules(ed, out moreAnswer) || string.Equals(moreAnswer, ConfirmNo, StringComparison.OrdinalIgnoreCase))
                     {
@@ -124,9 +141,9 @@ namespace beamcolor
             doc.Editor.WriteMessage("\nBEAMCOLOR log: " + LogPath);
         }
 
-        private static bool PromptForRule(Database db, Editor ed, int ruleIndex, out ColorRule rule, List<string> logLines)
+        private static bool PromptForRuleSettings(Database db, Editor ed, out RuleSettings settings, List<string> logLines)
         {
-            rule = null;
+            settings = null;
 
             PromptEntityOptions sourceOptions = new PromptEntityOptions("\n请选择一个图层和颜色: ");
             sourceOptions.AllowNone = false;
@@ -176,22 +193,14 @@ namespace beamcolor
                 tr.Commit();
             }
 
-            string prefix;
-            if (!PromptForPrefix(ed, out prefix))
+            settings = new RuleSettings
             {
-                logLines.Add("Prefix input cancelled.");
-                return false;
-            }
-
-            rule = new ColorRule
-            {
-                Prefix = prefix,
                 SourceLayer = sourceLayer,
                 TargetLayer = targetLayer,
                 TargetColor = targetColor
             };
 
-            logLines.Add("Rule " + ruleIndex + ": prefix=" + prefix + ", sourceLayer=" + sourceLayer + ", targetLayer=" + targetLayer + ", color=" + DescribeColor(targetColor));
+            logLines.Add("Rule settings: sourceLayer=" + sourceLayer + ", targetLayer=" + targetLayer + ", color=" + DescribeColor(targetColor));
             return true;
         }
 
@@ -695,6 +704,15 @@ namespace beamcolor
         {
             public string Prefix { get; set; }
 
+            public string SourceLayer { get; set; }
+
+            public string TargetLayer { get; set; }
+
+            public Color TargetColor { get; set; }
+        }
+
+        private class RuleSettings
+        {
             public string SourceLayer { get; set; }
 
             public string TargetLayer { get; set; }
