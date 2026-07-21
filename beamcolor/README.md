@@ -17,7 +17,7 @@ AutoCAD 梁编号和梁线批量改色插件。
 2. 加载 DLL：
 
 ```text
-beamcolor-v0.1.1-autocad2021.dll
+beamcolor-v0.1.2-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -26,7 +26,7 @@ beamcolor-v0.1.1-autocad2021.dll
 BEAMCOLOR
 ```
 
-4. 选择一个对象，用于确定需要处理的源图层和目标颜色。
+4. 选择一个对象，用于确定目标颜色；插件会记录该对象图层，但不再用这个图层限制梁编号文字识别。
 5. 选择目标图层上的一个对象，用于确定要一起改色的线图层。
 6. 输入匹配编号前缀规则，例如 `L`、`KL`、`LLK`。
 7. 选择是否继续添加更多规则。
@@ -40,6 +40,8 @@ BEAMCOLOR
 - `LLK` 不会被 `L` 误匹配；如果要处理 `LLK`，请单独添加规则 `LLK`。
 - 输入 `KL` 时，匹配 `KL13(1)`、`KL38(2)`。
 - 只识别梁编号格式：英文字母 + 数字 + 可选括号，例如 `KL13(1)`、`L16(C)`。
+- 梁编号文字可以在不同文字图层上，只要框选范围内文字开头符合编号规则就会识别。
+- 带 AutoCAD MText 格式码的文字会先提取可见梁编号，例如 `{\C...;L16(C)}` 会按 `L16(C)` 判断。
 - `250x500`、`Φ8@100`、`2Φ18;4Φ20` 等配筋文字会跳过。
 - 如果梁编号旁边没有目标图层上的线，只修改梁编号文字。
 
@@ -74,5 +76,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\beamcolor-v0.1.1-autocad2021.dll
+dist\beamcolor-v0.1.2-autocad2021.dll
 ```

@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-$version = "0.1.1"
+$version = "0.1.2"
 $outDir = Join-Path $PSScriptRoot "dist"
 $out = Join-Path $outDir "beamcolor-v$version-$AcadLabel.dll"
 

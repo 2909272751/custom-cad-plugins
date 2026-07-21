@@ -265,11 +265,12 @@ namespace beamcolor
                 {
                     string rawText = GetTextString(entity);
                     string normalized = NormalizeText(rawText);
-                    ColorRule matchedRule = FindRuleForTextEntity(entity.Layer, normalized, rules);
+                    string beamName = ExtractBeamNameCandidate(normalized);
+                    ColorRule matchedRule = FindRuleForBeamName(beamName, rules);
                     if (matchedRule == null)
                     {
                         preview.SkippedTextCount++;
-                        logLines.Add("SKIP text " + FormatObjectId(id) + ": raw=" + rawText + ", normalized=" + normalized + ", layer=" + entity.Layer);
+                        logLines.Add("SKIP text " + FormatObjectId(id) + ": raw=" + rawText + ", normalized=" + normalized + ", candidate=" + beamName + ", layer=" + entity.Layer);
                         continue;
                     }
 
@@ -282,9 +283,9 @@ namespace beamcolor
 
                     textInfo.Id = id;
                     textInfo.Rule = matchedRule;
-                    textInfo.Text = normalized;
+                    textInfo.Text = beamName;
                     beamTexts.Add(textInfo);
-                    logLines.Add("BEAM TEXT " + FormatObjectId(id) + ": " + normalized + ", rule=" + matchedRule.Prefix);
+                    logLines.Add("BEAM TEXT " + FormatObjectId(id) + ": " + beamName + ", normalized=" + normalized + ", layer=" + entity.Layer + ", rule=" + matchedRule.Prefix);
                     continue;
                 }
 
@@ -319,17 +320,12 @@ namespace beamcolor
             return preview;
         }
 
-        private static ColorRule FindRuleForTextEntity(string layerName, string text, List<ColorRule> rules)
+        private static ColorRule FindRuleForBeamName(string beamName, List<ColorRule> rules)
         {
             ColorRule best = null;
             foreach (ColorRule rule in rules)
             {
-                if (!string.Equals(layerName, rule.SourceLayer, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                if (IsBeamNameMatch(text, rule.Prefix))
+                if (IsBeamNameMatch(beamName, rule.Prefix))
                 {
                     if (best == null || rule.Prefix.Length > best.Prefix.Length)
                     {
@@ -354,9 +350,25 @@ namespace beamcolor
             return null;
         }
 
+        private static string ExtractBeamNameCandidate(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
+
+            Match match = Regex.Match(text, @"^[A-Z]+[-_]*\d+[A-Z0-9]*(\([^)]*\))?", RegexOptions.IgnoreCase);
+            return match.Success ? match.Value : string.Empty;
+        }
+
         private static bool IsBeamNameMatch(string text, string prefix)
         {
-            string pattern = "^" + Regex.Escape(prefix) + @"\d+([\(\uff08][^\)\uff09]+[\)\uff09])?$";
+            if (string.IsNullOrEmpty(text))
+            {
+                return false;
+            }
+
+            string pattern = "^" + Regex.Escape(prefix) + @"[-_]*\d+[A-Z0-9]*(\([^)]*\))?$";
             return Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase);
         }
 
