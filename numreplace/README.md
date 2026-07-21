@@ -13,8 +13,10 @@ AutoCAD 数字文字批量替换插件。
 
 ## 使用流程
 
-1. 在 AutoCAD 命令行输入 `NETLOAD`。
-2. 加载 DLL：
+1. 下载 `numreplace-v0.1.1-autocad2021.zip` 并解压。
+2. 运行解压目录里的 `unblock.ps1`。
+3. 在 AutoCAD 命令行输入 `NETLOAD`。
+4. 加载 DLL：
 
 ```text
 numreplace-v0.1.1-autocad2021.dll

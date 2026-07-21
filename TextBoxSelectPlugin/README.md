@@ -12,8 +12,10 @@ AutoCAD 选择“框内有文字”的封闭 PL 框插件。
 
 ## 使用流程
 
-1. 在 AutoCAD 命令行输入 `NETLOAD`。
-2. 加载 DLL：
+1. 下载 `TextBoxSelectPlugin-v0.1.5-autocad2021.zip` 并解压。
+2. 运行解压目录里的 `unblock.ps1`。
+3. 在 AutoCAD 命令行输入 `NETLOAD`。
+4. 加载 DLL：
 
 ```text
 TextBoxSelectPlugin-v0.1.5-autocad2021.dll
