@@ -17,7 +17,7 @@ AutoCAD 梁编号和梁线批量改色插件。
 2. 加载 DLL：
 
 ```text
-beamcolor-v0.1.4-autocad2021.dll
+beamcolor-v0.1.5-autocad2021.dll
 ```
 
 3. 输入命令：
@@ -46,6 +46,7 @@ BEAMCOLOR
 - 带 AutoCAD MText 格式码的文字会先提取可见梁编号，例如 `{\C...;L16(C)}` 会按 `L16(C)` 判断。
 - `250x500`、`Φ8@100`、`2Φ18;4Φ20` 等配筋文字会跳过。
 - 如果梁编号旁边没有目标图层上的线，只修改梁编号文字。
+- 同一个梁编号附近有多段横线或竖线时，会把用户选择的目标图层中距离最近的一组线段一起改色。
 
 ## 日志
 
@@ -78,5 +79,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\beamcolor-v0.1.4-autocad2021.dll
+dist\beamcolor-v0.1.5-autocad2021.dll
 ```

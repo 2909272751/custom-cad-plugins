@@ -345,12 +345,19 @@ namespace beamcolor
                 preview.TextIds.Add(text.Id);
                 preview.ColorById[text.Id] = text.Rule.TargetColor;
 
-                BeamLineInfo nearest = FindNearestLine(text, beamLines);
-                if (nearest != null)
+                List<BeamLineInfo> nearestLines = FindNearestLineGroup(text, beamLines);
+                if (nearestLines.Count > 0)
                 {
-                    preview.LineIds.Add(nearest.Id);
-                    preview.ColorById[nearest.Id] = text.Rule.TargetColor;
-                    logLines.Add("MATCH line " + FormatObjectId(nearest.Id) + " for text " + FormatObjectId(text.Id) + ", distance=" + nearest.DistanceTo(text.Center).ToString(CultureInfo.InvariantCulture));
+                    HashSet<ObjectId> loggedIds = new HashSet<ObjectId>();
+                    foreach (BeamLineInfo line in nearestLines)
+                    {
+                        preview.LineIds.Add(line.Id);
+                        preview.ColorById[line.Id] = text.Rule.TargetColor;
+                        if (loggedIds.Add(line.Id))
+                        {
+                            logLines.Add("MATCH line " + FormatObjectId(line.Id) + " for text " + FormatObjectId(text.Id) + ", distance=" + line.DistanceTo(text.Center).ToString(CultureInfo.InvariantCulture));
+                        }
+                    }
                 }
                 else
                 {
@@ -413,11 +420,13 @@ namespace beamcolor
             return Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase);
         }
 
-        private static BeamLineInfo FindNearestLine(BeamTextInfo text, List<BeamLineInfo> lines)
+        private static List<BeamLineInfo> FindNearestLineGroup(BeamTextInfo text, List<BeamLineInfo> lines)
         {
-            BeamLineInfo best = null;
+            List<LineCandidate> candidates = new List<LineCandidate>();
+            double textSize = Math.Max(Math.Max(text.Width, text.Height), 1.0);
+            double maxDistance = Math.Max(textSize * 12.0, 1200.0);
+            double projectionTolerance = Math.Max(textSize * 2.0, 200.0);
             double bestDistance = double.MaxValue;
-            double maxDistance = Math.Max(text.Width, text.Height) * 8.0;
 
             foreach (BeamLineInfo line in lines)
             {
@@ -432,19 +441,34 @@ namespace beamcolor
                     continue;
                 }
 
-                if (!line.ProjectionNear(text))
+                if (!line.ProjectionNear(text, projectionTolerance) && !line.IntersectsExpandedBox(text, projectionTolerance))
                 {
                     continue;
                 }
 
+                candidates.Add(new LineCandidate(line, distance));
                 if (distance < bestDistance)
                 {
                     bestDistance = distance;
-                    best = line;
                 }
             }
 
-            return best;
+            List<BeamLineInfo> matched = new List<BeamLineInfo>();
+            if (candidates.Count == 0)
+            {
+                return matched;
+            }
+
+            double nearestTolerance = Math.Max(textSize * 1.5, 120.0);
+            foreach (LineCandidate candidate in candidates)
+            {
+                if (candidate.Distance <= bestDistance + nearestTolerance)
+                {
+                    matched.Add(candidate.Line);
+                }
+            }
+
+            return matched;
         }
 
         private static void ApplyColors(Transaction tr, PreviewResult preview, List<string> logLines)
@@ -779,7 +803,7 @@ namespace beamcolor
                 return point.GetDistanceTo(projection);
             }
 
-            public bool ProjectionNear(BeamTextInfo text)
+            public bool ProjectionNear(BeamTextInfo text, double tolerance)
             {
                 double dx = Math.Abs(End.X - Start.X);
                 double dy = Math.Abs(End.Y - Start.Y);
@@ -787,15 +811,38 @@ namespace beamcolor
                 {
                     double min = Math.Min(Start.X, End.X);
                     double max = Math.Max(Start.X, End.X);
-                    double tolerance = Math.Max(text.Width, text.Height) * 2.0;
                     return text.Max.X >= min - tolerance && text.Min.X <= max + tolerance;
                 }
 
                 double yMin = Math.Min(Start.Y, End.Y);
                 double yMax = Math.Max(Start.Y, End.Y);
-                double yTolerance = Math.Max(text.Width, text.Height) * 2.0;
-                return text.Max.Y >= yMin - yTolerance && text.Min.Y <= yMax + yTolerance;
+                return text.Max.Y >= yMin - tolerance && text.Min.Y <= yMax + tolerance;
             }
+
+            public bool IntersectsExpandedBox(BeamTextInfo text, double tolerance)
+            {
+                double lineMinX = Math.Min(Start.X, End.X);
+                double lineMaxX = Math.Max(Start.X, End.X);
+                double lineMinY = Math.Min(Start.Y, End.Y);
+                double lineMaxY = Math.Max(Start.Y, End.Y);
+                return lineMaxX >= text.Min.X - tolerance &&
+                    lineMinX <= text.Max.X + tolerance &&
+                    lineMaxY >= text.Min.Y - tolerance &&
+                    lineMinY <= text.Max.Y + tolerance;
+            }
+        }
+
+        private class LineCandidate
+        {
+            public LineCandidate(BeamLineInfo line, double distance)
+            {
+                Line = line;
+                Distance = distance;
+            }
+
+            public BeamLineInfo Line { get; private set; }
+
+            public double Distance { get; private set; }
         }
 
         private class PreviewResult
