@@ -64,11 +64,12 @@ namespace beamcolor
                         Prefix = prefix,
                         SourceLayer = settings.SourceLayer,
                         TargetLayer = settings.TargetLayer,
-                        TargetColor = settings.TargetColor
+                        TargetColor = settings.TargetColor,
+                        MaxLineDistance = settings.MaxLineDistance
                     };
 
                     rules.Add(rule);
-                    logLines.Add("Rule " + rules.Count + ": prefix=" + prefix + ", sourceLayer=" + settings.SourceLayer + ", targetLayer=" + settings.TargetLayer + ", color=" + DescribeColor(settings.TargetColor));
+                    logLines.Add("Rule " + rules.Count + ": prefix=" + prefix + ", sourceLayer=" + settings.SourceLayer + ", targetLayer=" + settings.TargetLayer + ", color=" + DescribeColor(settings.TargetColor) + ", maxLineDistance=" + settings.MaxLineDistance.ToString(CultureInfo.InvariantCulture));
 
                     string moreAnswer;
                     if (!PromptForMoreRules(ed, out moreAnswer) || string.Equals(moreAnswer, ConfirmNo, StringComparison.OrdinalIgnoreCase))
@@ -193,14 +194,46 @@ namespace beamcolor
                 tr.Commit();
             }
 
+            double maxLineDistance;
+            if (!PromptForMaxLineDistance(ed, out maxLineDistance))
+            {
+                logLines.Add("Max line distance input cancelled.");
+                return false;
+            }
+
             settings = new RuleSettings
             {
                 SourceLayer = sourceLayer,
                 TargetLayer = targetLayer,
-                TargetColor = targetColor
+                TargetColor = targetColor,
+                MaxLineDistance = maxLineDistance
             };
 
-            logLines.Add("Rule settings: sourceLayer=" + sourceLayer + ", targetLayer=" + targetLayer + ", color=" + DescribeColor(targetColor));
+            logLines.Add("Rule settings: sourceLayer=" + sourceLayer + ", targetLayer=" + targetLayer + ", color=" + DescribeColor(targetColor) + ", maxLineDistance=" + maxLineDistance.ToString(CultureInfo.InvariantCulture));
+            return true;
+        }
+
+        private static bool PromptForMaxLineDistance(Editor ed, out double maxLineDistance)
+        {
+            PromptDoubleOptions options = new PromptDoubleOptions("\n请输入梁编号到目标线最大匹配距离 <1500>: ");
+            options.AllowNone = true;
+            options.AllowNegative = false;
+            options.AllowZero = false;
+            options.DefaultValue = 1500.0;
+            PromptDoubleResult result = ed.GetDouble(options);
+            if (result.Status == PromptStatus.None)
+            {
+                maxLineDistance = options.DefaultValue;
+                return true;
+            }
+
+            if (result.Status != PromptStatus.OK)
+            {
+                maxLineDistance = 0.0;
+                return false;
+            }
+
+            maxLineDistance = result.Value;
             return true;
         }
 
@@ -355,7 +388,7 @@ namespace beamcolor
                         preview.ColorById[line.Id] = text.Rule.TargetColor;
                         if (loggedIds.Add(line.Id))
                         {
-                            logLines.Add("MATCH line " + FormatObjectId(line.Id) + " for text " + FormatObjectId(text.Id) + ", distance=" + line.DistanceTo(text.Center).ToString(CultureInfo.InvariantCulture));
+                            logLines.Add("MATCH line " + FormatObjectId(line.Id) + " for text " + FormatObjectId(text.Id) + ", boxDistance=" + line.DistanceToBox(text).ToString(CultureInfo.InvariantCulture) + ", centerDistance=" + line.DistanceTo(text.Center).ToString(CultureInfo.InvariantCulture));
                         }
                     }
                 }
@@ -423,9 +456,9 @@ namespace beamcolor
         private static List<BeamLineInfo> FindNearestLineGroup(BeamTextInfo text, List<BeamLineInfo> lines)
         {
             List<LineCandidate> candidates = new List<LineCandidate>();
-            double textSize = Math.Max(Math.Max(text.Width, text.Height), 1.0);
-            double maxDistance = Math.Max(textSize * 12.0, 1200.0);
-            double projectionTolerance = Math.Max(textSize * 2.0, 200.0);
+            double textShortSize = Math.Max(Math.Min(text.Width, text.Height), 1.0);
+            double maxDistance = Math.Max(text.Rule.MaxLineDistance, 1.0);
+            double projectionTolerance = Math.Max(textShortSize * 1.5, Math.Min(maxDistance * 0.2, 300.0));
             double bestDistance = double.MaxValue;
 
             foreach (BeamLineInfo line in lines)
@@ -435,7 +468,7 @@ namespace beamcolor
                     continue;
                 }
 
-                double distance = line.DistanceTo(text.Center);
+                double distance = line.DistanceToBox(text);
                 if (distance > maxDistance)
                 {
                     continue;
@@ -459,7 +492,7 @@ namespace beamcolor
                 return matched;
             }
 
-            double nearestTolerance = Math.Max(textSize * 1.5, 120.0);
+            double nearestTolerance = Math.Max(textShortSize * 0.75, 80.0);
             foreach (LineCandidate candidate in candidates)
             {
                 if (candidate.Distance <= bestDistance + nearestTolerance)
@@ -733,6 +766,8 @@ namespace beamcolor
             public string TargetLayer { get; set; }
 
             public Color TargetColor { get; set; }
+
+            public double MaxLineDistance { get; set; }
         }
 
         private class RuleSettings
@@ -742,6 +777,8 @@ namespace beamcolor
             public string TargetLayer { get; set; }
 
             public Color TargetColor { get; set; }
+
+            public double MaxLineDistance { get; set; }
         }
 
         private class BeamTextInfo
@@ -800,6 +837,50 @@ namespace beamcolor
                 double t = ((point.X - Start.X) * dx + (point.Y - Start.Y) * dy) / lengthSq;
                 t = Math.Max(0.0, Math.Min(1.0, t));
                 Point2d projection = new Point2d(Start.X + t * dx, Start.Y + t * dy);
+                return point.GetDistanceTo(projection);
+            }
+
+            public double DistanceToBox(BeamTextInfo text)
+            {
+                if (IntersectsExpandedBox(text, 0.0))
+                {
+                    return 0.0;
+                }
+
+                Point2d bottomLeft = new Point2d(text.Min.X, text.Min.Y);
+                Point2d bottomRight = new Point2d(text.Max.X, text.Min.Y);
+                Point2d topRight = new Point2d(text.Max.X, text.Max.Y);
+                Point2d topLeft = new Point2d(text.Min.X, text.Max.Y);
+
+                double best = double.MaxValue;
+                best = Math.Min(best, DistanceTo(bottomLeft));
+                best = Math.Min(best, DistanceTo(bottomRight));
+                best = Math.Min(best, DistanceTo(topRight));
+                best = Math.Min(best, DistanceTo(topLeft));
+                best = Math.Min(best, SegmentDistance(bottomLeft, bottomRight, Start));
+                best = Math.Min(best, SegmentDistance(bottomLeft, bottomRight, End));
+                best = Math.Min(best, SegmentDistance(bottomRight, topRight, Start));
+                best = Math.Min(best, SegmentDistance(bottomRight, topRight, End));
+                best = Math.Min(best, SegmentDistance(topRight, topLeft, Start));
+                best = Math.Min(best, SegmentDistance(topRight, topLeft, End));
+                best = Math.Min(best, SegmentDistance(topLeft, bottomLeft, Start));
+                best = Math.Min(best, SegmentDistance(topLeft, bottomLeft, End));
+                return best;
+            }
+
+            private static double SegmentDistance(Point2d start, Point2d end, Point2d point)
+            {
+                double dx = end.X - start.X;
+                double dy = end.Y - start.Y;
+                double lengthSq = dx * dx + dy * dy;
+                if (lengthSq < 1e-9)
+                {
+                    return point.GetDistanceTo(start);
+                }
+
+                double t = ((point.X - start.X) * dx + (point.Y - start.Y) * dy) / lengthSq;
+                t = Math.Max(0.0, Math.Min(1.0, t));
+                Point2d projection = new Point2d(start.X + t * dx, start.Y + t * dy);
                 return point.GetDistanceTo(projection);
             }
 
