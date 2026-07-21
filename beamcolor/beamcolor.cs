@@ -128,53 +128,51 @@ namespace beamcolor
         {
             rule = null;
 
-            PromptEntityOptions textOptions = new PromptEntityOptions("\n请选择一个梁编号文字，用于确定文字图层和目标颜色: ");
-            textOptions.AllowNone = false;
-            PromptEntityResult textResult = ed.GetEntity(textOptions);
-            if (textResult.Status != PromptStatus.OK)
+            PromptEntityOptions sourceOptions = new PromptEntityOptions("\n请选择一个图层和颜色: ");
+            sourceOptions.AllowNone = false;
+            PromptEntityResult sourceResult = ed.GetEntity(sourceOptions);
+            if (sourceResult.Status != PromptStatus.OK)
             {
-                logLines.Add("Rule text pick cancelled: " + textResult.Status);
+                logLines.Add("Rule source pick cancelled: " + sourceResult.Status);
                 return false;
             }
 
-            string textLayer;
+            string sourceLayer;
             Color targetColor;
-            string sampleText;
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-                Entity textEntity = tr.GetObject(textResult.ObjectId, OpenMode.ForRead) as Entity;
-                if (!IsTextEntity(textEntity))
+                Entity sourceEntity = tr.GetObject(sourceResult.ObjectId, OpenMode.ForRead) as Entity;
+                if (sourceEntity == null)
                 {
-                    ed.WriteMessage("\n选择的对象不是文字，请重新执行 BEAMCOLOR。");
+                    ed.WriteMessage("\n选择的对象不是有效实体，请重新执行 BEAMCOLOR。");
                     return false;
                 }
 
-                textLayer = textEntity.Layer;
-                targetColor = textEntity.Color;
-                sampleText = GetTextString(textEntity);
+                sourceLayer = sourceEntity.Layer;
+                targetColor = ResolveEntityColor(db, tr, sourceEntity);
                 tr.Commit();
             }
 
-            PromptEntityOptions lineOptions = new PromptEntityOptions("\n请选择一条对应梁线，用于确定梁线图层: ");
-            lineOptions.AllowNone = false;
-            PromptEntityResult lineResult = ed.GetEntity(lineOptions);
-            if (lineResult.Status != PromptStatus.OK)
+            PromptEntityOptions targetOptions = new PromptEntityOptions("\n请选择目标图层上的一个对象: ");
+            targetOptions.AllowNone = false;
+            PromptEntityResult targetResult = ed.GetEntity(targetOptions);
+            if (targetResult.Status != PromptStatus.OK)
             {
-                logLines.Add("Rule beam line pick cancelled: " + lineResult.Status);
+                logLines.Add("Rule target layer pick cancelled: " + targetResult.Status);
                 return false;
             }
 
-            string beamLayer;
+            string targetLayer;
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-                Entity lineEntity = tr.GetObject(lineResult.ObjectId, OpenMode.ForRead) as Entity;
-                if (!IsCurveEntity(lineEntity))
+                Entity targetEntity = tr.GetObject(targetResult.ObjectId, OpenMode.ForRead) as Entity;
+                if (targetEntity == null)
                 {
-                    ed.WriteMessage("\n选择的对象不是梁线，请重新执行 BEAMCOLOR。");
+                    ed.WriteMessage("\n选择的对象不是有效实体，请重新执行 BEAMCOLOR。");
                     return false;
                 }
 
-                beamLayer = lineEntity.Layer;
+                targetLayer = targetEntity.Layer;
                 tr.Commit();
             }
 
@@ -188,12 +186,12 @@ namespace beamcolor
             rule = new ColorRule
             {
                 Prefix = prefix,
-                TextLayer = textLayer,
-                BeamLayer = beamLayer,
+                SourceLayer = sourceLayer,
+                TargetLayer = targetLayer,
                 TargetColor = targetColor
             };
 
-            logLines.Add("Rule " + ruleIndex + ": prefix=" + prefix + ", sample=" + sampleText + ", textLayer=" + textLayer + ", beamLayer=" + beamLayer + ", color=" + DescribeColor(targetColor));
+            logLines.Add("Rule " + ruleIndex + ": prefix=" + prefix + ", sourceLayer=" + sourceLayer + ", targetLayer=" + targetLayer + ", color=" + DescribeColor(targetColor));
             return true;
         }
 
@@ -263,38 +261,39 @@ namespace beamcolor
                     continue;
                 }
 
-                foreach (ColorRule rule in rules)
+                if (IsTextEntity(entity))
                 {
-                    if (IsTextEntity(entity) && string.Equals(entity.Layer, rule.TextLayer, StringComparison.OrdinalIgnoreCase))
+                    string rawText = GetTextString(entity);
+                    string normalized = NormalizeText(rawText);
+                    ColorRule matchedRule = FindRuleForTextEntity(entity.Layer, normalized, rules);
+                    if (matchedRule == null)
                     {
-                        string rawText = GetTextString(entity);
-                        string normalized = NormalizeText(rawText);
-                        ColorRule matchedRule = FindRuleForBeamName(normalized, rules);
-                        if (matchedRule == null)
-                        {
-                            preview.SkippedTextCount++;
-                            logLines.Add("SKIP text " + FormatObjectId(id) + ": " + rawText);
-                            break;
-                        }
-
-                        BeamTextInfo textInfo = GetTextInfo(entity);
-                        if (textInfo == null)
-                        {
-                            break;
-                        }
-
-                        textInfo.Id = id;
-                        textInfo.Rule = matchedRule;
-                        textInfo.Text = normalized;
-                        beamTexts.Add(textInfo);
-                        logLines.Add("BEAM TEXT " + FormatObjectId(id) + ": " + normalized + ", rule=" + matchedRule.Prefix);
-                        break;
+                        preview.SkippedTextCount++;
+                        logLines.Add("SKIP text " + FormatObjectId(id) + ": raw=" + rawText + ", normalized=" + normalized + ", layer=" + entity.Layer);
+                        continue;
                     }
 
-                    if (IsCurveEntity(entity) && string.Equals(entity.Layer, rule.BeamLayer, StringComparison.OrdinalIgnoreCase))
+                    BeamTextInfo textInfo = GetTextInfo(entity);
+                    if (textInfo == null)
                     {
-                        AddBeamLineInfos(entity, id, beamLines);
-                        break;
+                        logLines.Add("SKIP no extents " + FormatObjectId(id) + ": " + rawText);
+                        continue;
+                    }
+
+                    textInfo.Id = id;
+                    textInfo.Rule = matchedRule;
+                    textInfo.Text = normalized;
+                    beamTexts.Add(textInfo);
+                    logLines.Add("BEAM TEXT " + FormatObjectId(id) + ": " + normalized + ", rule=" + matchedRule.Prefix);
+                    continue;
+                }
+
+                if (IsCurveEntity(entity))
+                {
+                    ColorRule lineRule = FindRuleForTargetLayer(entity.Layer, rules);
+                    if (lineRule != null)
+                    {
+                        AddBeamLineInfos(entity, id, beamLines, lineRule);
                     }
                 }
             }
@@ -320,11 +319,16 @@ namespace beamcolor
             return preview;
         }
 
-        private static ColorRule FindRuleForBeamName(string text, List<ColorRule> rules)
+        private static ColorRule FindRuleForTextEntity(string layerName, string text, List<ColorRule> rules)
         {
             ColorRule best = null;
             foreach (ColorRule rule in rules)
             {
+                if (!string.Equals(layerName, rule.SourceLayer, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (IsBeamNameMatch(text, rule.Prefix))
                 {
                     if (best == null || rule.Prefix.Length > best.Prefix.Length)
@@ -337,9 +341,22 @@ namespace beamcolor
             return best;
         }
 
+        private static ColorRule FindRuleForTargetLayer(string layerName, List<ColorRule> rules)
+        {
+            foreach (ColorRule rule in rules)
+            {
+                if (string.Equals(layerName, rule.TargetLayer, StringComparison.OrdinalIgnoreCase))
+                {
+                    return rule;
+                }
+            }
+
+            return null;
+        }
+
         private static bool IsBeamNameMatch(string text, string prefix)
         {
-            string pattern = "^" + Regex.Escape(prefix) + @"\d+(\([^)]+\))?$";
+            string pattern = "^" + Regex.Escape(prefix) + @"\d+([\(\uff08][^\)\uff09]+[\)\uff09])?$";
             return Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase);
         }
 
@@ -351,6 +368,11 @@ namespace beamcolor
 
             foreach (BeamLineInfo line in lines)
             {
+                if (!object.ReferenceEquals(line.Rule, text.Rule))
+                {
+                    continue;
+                }
+
                 double distance = line.DistanceTo(text.Center);
                 if (distance > maxDistance)
                 {
@@ -387,12 +409,12 @@ namespace beamcolor
             }
         }
 
-        private static void AddBeamLineInfos(Entity entity, ObjectId id, List<BeamLineInfo> lines)
+        private static void AddBeamLineInfos(Entity entity, ObjectId id, List<BeamLineInfo> lines, ColorRule rule)
         {
             Line line = entity as Line;
             if (line != null)
             {
-                lines.Add(new BeamLineInfo(id, new Point2d(line.StartPoint.X, line.StartPoint.Y), new Point2d(line.EndPoint.X, line.EndPoint.Y)));
+                lines.Add(new BeamLineInfo(id, new Point2d(line.StartPoint.X, line.StartPoint.Y), new Point2d(line.EndPoint.X, line.EndPoint.Y), rule));
                 return;
             }
 
@@ -408,7 +430,7 @@ namespace beamcolor
                         continue;
                     }
 
-                    lines.Add(new BeamLineInfo(id, polyline.GetPoint2dAt(i), polyline.GetPoint2dAt((i + 1) % count)));
+                    lines.Add(new BeamLineInfo(id, polyline.GetPoint2dAt(i), polyline.GetPoint2dAt((i + 1) % count), rule));
                 }
             }
         }
@@ -434,7 +456,24 @@ namespace beamcolor
 
         private static string NormalizeText(string text)
         {
-            return StripMTextFormatting(text).Trim().ToUpperInvariant().Replace(" ", string.Empty);
+            string normalized = StripMTextFormatting(text).Trim().ToUpperInvariant();
+            normalized = normalized.Replace("\r", string.Empty);
+            normalized = normalized.Replace("\n", string.Empty);
+            normalized = normalized.Replace("\t", string.Empty);
+            normalized = normalized.Replace(" ", string.Empty);
+            normalized = normalized.Replace("\uff08", "(");
+            normalized = normalized.Replace("\uff09", ")");
+            normalized = normalized.Replace("\uff10", "0");
+            normalized = normalized.Replace("\uff11", "1");
+            normalized = normalized.Replace("\uff12", "2");
+            normalized = normalized.Replace("\uff13", "3");
+            normalized = normalized.Replace("\uff14", "4");
+            normalized = normalized.Replace("\uff15", "5");
+            normalized = normalized.Replace("\uff16", "6");
+            normalized = normalized.Replace("\uff17", "7");
+            normalized = normalized.Replace("\uff18", "8");
+            normalized = normalized.Replace("\uff19", "9");
+            return normalized;
         }
 
         private static string StripMTextFormatting(string text)
@@ -475,6 +514,33 @@ namespace beamcolor
         private static bool IsCurveEntity(Entity entity)
         {
             return entity is Line || entity is Polyline;
+        }
+
+        private static Color ResolveEntityColor(Database db, Transaction tr, Entity entity)
+        {
+            if (entity == null)
+            {
+                return Color.FromColorIndex(ColorMethod.ByAci, 256);
+            }
+
+            if (entity.Color != null && entity.Color.ColorMethod != ColorMethod.ByLayer && entity.Color.ColorMethod != ColorMethod.ByBlock)
+            {
+                return CloneColor(entity.Color);
+            }
+
+            try
+            {
+                LayerTableRecord layer = tr.GetObject(entity.LayerId, OpenMode.ForRead) as LayerTableRecord;
+                if (layer != null)
+                {
+                    return CloneColor(layer.Color);
+                }
+            }
+            catch
+            {
+            }
+
+            return CloneColor(entity.Color);
         }
 
         private static HashSet<ObjectId> SelectionToSet(SelectionSet selectionSet)
@@ -585,9 +651,9 @@ namespace beamcolor
         {
             public string Prefix { get; set; }
 
-            public string TextLayer { get; set; }
+            public string SourceLayer { get; set; }
 
-            public string BeamLayer { get; set; }
+            public string TargetLayer { get; set; }
 
             public Color TargetColor { get; set; }
         }
@@ -619,11 +685,12 @@ namespace beamcolor
 
         private class BeamLineInfo
         {
-            public BeamLineInfo(ObjectId id, Point2d start, Point2d end)
+            public BeamLineInfo(ObjectId id, Point2d start, Point2d end, ColorRule rule)
             {
                 Id = id;
                 Start = start;
                 End = end;
+                Rule = rule;
             }
 
             public ObjectId Id { get; private set; }
@@ -631,6 +698,8 @@ namespace beamcolor
             public Point2d Start { get; private set; }
 
             public Point2d End { get; private set; }
+
+            public ColorRule Rule { get; private set; }
 
             public double DistanceTo(Point2d point)
             {
