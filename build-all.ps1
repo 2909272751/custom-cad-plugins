@@ -13,7 +13,8 @@ $plugins = @(
   "TextBoxSelectPlugin",
   "NumberTextHighlightPlugin",
   "numreplace",
-  "beamcolor"
+  "beamcolor",
+  "xrefpick"
 )
 
 foreach ($plugin in $plugins) {
