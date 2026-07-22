@@ -10,16 +10,16 @@
 
 | 插件 | 命令 | 一句话功能 | 下载 |
 | --- | --- | --- | --- |
-| 简易说明 | - | 简短说明各插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.10-简易说明）](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/custom-cad-plugins-v0.1.10-quick-guide.txt) |
-| `OpeningOutlinePlugin` | `DKTRACE` | 根据开洞符号和边界图层，生成洞口闭合轮廓线。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/OpeningOutlinePlugin-v0.1.1-autocad2022.zip) |
-| `OuterOutlinePlugin` | `PCOUTLINE` | 从楼层或构件边线中提取干净的外轮廓闭合线。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/OuterOutlinePlugin-v0.1.5-autocad2022.zip) |
-| `HatchOuterPolylinePlugin` | `HATCHPL` | 从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/HatchOuterPolylinePlugin-v0.1.11-autocad2022.zip) |
-| `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向、是否删除原图和 offset 后颜色。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/LayerOffsetPlugin-v0.1.1-autocad2021.zip) |
-| `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/TextBoxSelectPlugin-v0.1.5-autocad2021.zip) |
-| `NumberTextHighlightPlugin` | `NUMRED` | 按大于、等于、小于条件把选定文字图层中的数字文字标红。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/NumberTextHighlightPlugin-v0.1.0-autocad2021.zip) |
-| `numreplace` | `NUMREPLACE` | 按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/numreplace-v0.1.1-autocad2021.zip) |
-| `beamcolor` | `BEAMCOLOR` | 按梁编号前缀批量修改梁编号文字和目标图层线条颜色，跳过配筋文字。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/beamcolor-v0.1.8-autocad2021.zip) |
-| `xrefpick` | `XREFPICK` | 过滤 DWG 外部参照和锁定图层选择，增强从外参/填充上起框选，并可临时改外参图层颜色后一键恢复。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.10/xrefpick-v0.1.4-autocad2021.zip) |
+| 简易说明 | - | 简短说明各插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.11-简易说明）](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/custom-cad-plugins-v0.1.11-quick-guide.txt) |
+| `OpeningOutlinePlugin` | `DKTRACE` | 根据开洞符号和边界图层，生成洞口闭合轮廓线。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/OpeningOutlinePlugin-v0.1.1-autocad2022.zip) |
+| `OuterOutlinePlugin` | `PCOUTLINE` | 从楼层或构件边线中提取干净的外轮廓闭合线。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/OuterOutlinePlugin-v0.1.5-autocad2022.zip) |
+| `HatchOuterPolylinePlugin` | `HATCHPL` | 从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/HatchOuterPolylinePlugin-v0.1.11-autocad2022.zip) |
+| `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向、是否删除原图和 offset 后颜色。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/LayerOffsetPlugin-v0.1.1-autocad2021.zip) |
+| `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/TextBoxSelectPlugin-v0.1.5-autocad2021.zip) |
+| `NumberTextHighlightPlugin` | `NUMRED` | 按大于、等于、小于条件把选定文字图层中的数字文字标红。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/NumberTextHighlightPlugin-v0.1.0-autocad2021.zip) |
+| `numreplace` | `NUMREPLACE` | 按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/numreplace-v0.1.1-autocad2021.zip) |
+| `beamcolor` | `BEAMCOLOR` | 按梁编号前缀批量修改梁编号文字和目标图层线条颜色，跳过配筋文字。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/beamcolor-v0.1.8-autocad2021.zip) |
+| `xrefpick` | `XREFPICK` | 过滤 DWG 外部参照和锁定图层选择，可局部隐藏外参/锁定块填充并一键恢复。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.11/xrefpick-v0.1.7-autocad2021.zip) |
 
 ## 新手怎么用
 
@@ -166,9 +166,9 @@ powershell -ExecutionPolicy Bypass -File .\unblock.ps1
 
 ## Release
 
-当前已发布合集版本是 `v0.1.10`，包含：
+当前已发布合集版本是 `v0.1.11`，包含：
 
-- `custom-cad-plugins-v0.1.10-quick-guide.txt`
+- `custom-cad-plugins-v0.1.11-quick-guide.txt`
 - `OpeningOutlinePlugin-v0.1.1-autocad2022.zip`
 - `OuterOutlinePlugin-v0.1.5-autocad2022.zip`
 - `HatchOuterPolylinePlugin-v0.1.11-autocad2022.zip`
@@ -177,4 +177,4 @@ powershell -ExecutionPolicy Bypass -File .\unblock.ps1
 - `NumberTextHighlightPlugin-v0.1.0-autocad2021.zip`
 - `numreplace-v0.1.1-autocad2021.zip`
 - `beamcolor-v0.1.8-autocad2021.zip`
-- `xrefpick-v0.1.4-autocad2021.zip`
+- `xrefpick-v0.1.7-autocad2021.zip`

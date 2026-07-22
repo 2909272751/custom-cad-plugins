@@ -1,5 +1,5 @@
 param(
-  [string]$Version = "0.1.10"
+  [string]$Version = "0.1.11"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +13,7 @@ $packages = @(
   @{ Name = "NumberTextHighlightPlugin"; Command = "NUMRED"; Dll = "NumberTextHighlightPlugin\dist\NumberTextHighlightPlugin-v0.1.0-autocad2021.dll" },
   @{ Name = "numreplace"; Command = "NUMREPLACE"; Dll = "numreplace\dist\numreplace-v0.1.1-autocad2021.dll" },
   @{ Name = "beamcolor"; Command = "BEAMCOLOR"; Dll = "beamcolor\dist\beamcolor-v0.1.8-autocad2021.dll" },
-  @{ Name = "xrefpick"; Command = "XREFPICK"; Dll = "xrefpick\dist\xrefpick-v0.1.4-autocad2021.dll" }
+  @{ Name = "xrefpick"; Command = "XREFPICK"; Dll = "xrefpick\dist\xrefpick-v0.1.7-autocad2021.dll" }
 )
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem

@@ -13,13 +13,13 @@ AutoCAD 外部参照选择过滤和外参图层临时改色插件。
 
 ## 使用流程
 
-1. 下载 `xrefpick-v0.1.4-autocad2021.zip` 并解压。
+1. 下载 `xrefpick-v0.1.7-autocad2021.zip` 并解压。
 2. 运行解压目录里的 `unblock.ps1`。
 3. 在 AutoCAD 命令行输入 `NETLOAD`。
 4. 加载 DLL：
 
 ```text
-xrefpick-v0.1.4-autocad2021.dll
+xrefpick-v0.1.7-autocad2021.dll
 ```
 
 5. 输入命令：
@@ -36,7 +36,7 @@ XREFPICK
 外参改色：未改色或无恢复记录
 日志路径：%TEMP%\XREFPICK.log
 配置路径：%APPDATA%\custom-cad-plugins\xrefpick.cfg
-请选择操作 [切换过滤(F)/外参改色(C)/恢复颜色(R)/状态(S)] <F>:
+请选择操作 [切换过滤(F)/隐藏填充(H)/恢复填充(U)/外参改色(C)/恢复颜色(R)/状态(S)] <F>:
 ```
 
 ## 操作说明
@@ -80,6 +80,17 @@ AutoCAD 的底层命中测试仍可能先碰到外参，所以极少数情况下
 ```
 
 恢复完成后会清除当前 DWG 里的颜色记录。
+
+### 隐藏填充 H / 恢复填充 U
+
+只对外参和锁定普通块相关填充生效，减少 Hatch/填充区域抢走框选起点。
+
+实现方式：
+
+- 外参：隐藏外参依赖填充图层，不影响本图同名图层。
+- 锁定普通块：隐藏块定义内 Hatch/Solid 对象，并记录对象可见性用于恢复。
+- `U` 会恢复隐藏的外参填充图层和锁定块填充对象。
+- 不删除 Hatch 对象，不修改外参源文件，不使用全图 `FILLMODE=0`。
 
 ### 状态 S
 
@@ -129,5 +140,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "D:\autocad\AutoC
 输出：
 
 ```text
-dist\xrefpick-v0.1.4-autocad2021.dll
+dist\xrefpick-v0.1.7-autocad2021.dll
 ```

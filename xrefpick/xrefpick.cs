@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -13,6 +14,8 @@ namespace xrefpick
     public class xrefpickCommand : IExtensionApplication
     {
         private const string BackupDictionaryName = "XREFPICK_COLOR_BACKUP";
+        private const string FillLayerBackupDictionaryName = "XREFPICK_FILL_LAYER_BACKUP";
+        private const string FillObjectBackupDictionaryName = "XREFPICK_FILL_OBJECT_BACKUP";
         private const int DefaultXrefColorIndex = 35;
         private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "XREFPICK.log");
         private static readonly string ConfigDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "custom-cad-plugins");
@@ -82,9 +85,11 @@ namespace xrefpick
                 XrefColorBackupStatus backupStatus = GetColorBackupStatus(db);
                 WriteStatus(ed, backupStatus);
 
-                PromptKeywordOptions actionOptions = new PromptKeywordOptions("\n请选择操作 [切换过滤(F)/外参改色(C)/恢复颜色(R)/状态(S)] <F>: ");
+                PromptKeywordOptions actionOptions = new PromptKeywordOptions("\n请选择操作 [切换过滤(F)/隐藏填充(H)/恢复填充(U)/外参改色(C)/恢复颜色(R)/状态(S)] <F>: ");
                 actionOptions.AllowNone = true;
                 actionOptions.Keywords.Add("F");
+                actionOptions.Keywords.Add("H");
+                actionOptions.Keywords.Add("U");
                 actionOptions.Keywords.Add("C");
                 actionOptions.Keywords.Add("R");
                 actionOptions.Keywords.Add("S");
@@ -101,6 +106,14 @@ namespace xrefpick
                 if (action == "F")
                 {
                     ToggleFilter(doc);
+                }
+                else if (action == "H")
+                {
+                    HideScopedFill(doc);
+                }
+                else if (action == "U")
+                {
+                    RestoreScopedFill(doc);
                 }
                 else if (action == "C")
                 {
@@ -169,6 +182,252 @@ namespace xrefpick
             }
 
             WriteLog("Filter toggled. enabled=" + enabled + ", removedFromCurrentSelection=" + removed);
+        }
+
+        private static void HideScopedFill(Document doc)
+        {
+            Editor ed = doc.Editor;
+            int xrefLayerCount = 0;
+            int lockedBlockFillCount = 0;
+            int skippedObjectCount = 0;
+
+            using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+            {
+                Dictionary<string, LayerStateRecord> layerBackup = ReadLayerStateBackup(tr, doc.Database, FillLayerBackupDictionaryName);
+                Dictionary<string, ObjectVisibilityRecord> objectBackup = ReadObjectVisibilityBackup(tr, doc.Database, FillObjectBackupDictionaryName);
+
+                xrefLayerCount = HideXrefFillLayers(tr, doc.Database, layerBackup);
+                lockedBlockFillCount = HideLockedBlockFillObjects(tr, doc.Database, objectBackup, out skippedObjectCount);
+
+                WriteLayerStateBackup(tr, doc.Database, FillLayerBackupDictionaryName, layerBackup);
+                WriteObjectVisibilityBackup(tr, doc.Database, FillObjectBackupDictionaryName, objectBackup);
+                tr.Commit();
+            }
+
+            ed.Regen();
+            ed.WriteMessage("\n完成：已隐藏外参填充图层 {0} 个，锁定块内填充对象 {1} 个，跳过 {2} 个。可用 U 恢复。", xrefLayerCount, lockedBlockFillCount, skippedObjectCount);
+            WriteLog("Scoped fill hidden. xrefLayers=" + xrefLayerCount + ", lockedBlockFills=" + lockedBlockFillCount + ", skipped=" + skippedObjectCount);
+        }
+
+        private static void RestoreScopedFill(Document doc)
+        {
+            Editor ed = doc.Editor;
+            int restoredLayers = 0;
+            int restoredObjects = 0;
+            int missingObjects = 0;
+
+            using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+            {
+                restoredLayers = RestoreLayerStates(tr, doc.Database, FillLayerBackupDictionaryName);
+                RestoreObjectVisibilityResult objectResult = RestoreObjectVisibility(tr, doc.Database, FillObjectBackupDictionaryName);
+                restoredObjects = objectResult.Restored;
+                missingObjects = objectResult.Missing;
+                tr.Commit();
+            }
+
+            ed.Regen();
+            ed.WriteMessage("\n完成：已恢复填充图层 {0} 个，填充对象 {1} 个，缺失对象 {2} 个。", restoredLayers, restoredObjects, missingObjects);
+            WriteLog("Scoped fill restored. layers=" + restoredLayers + ", objects=" + restoredObjects + ", missingObjects=" + missingObjects);
+        }
+
+        private static int HideXrefFillLayers(Transaction tr, Database db, Dictionary<string, LayerStateRecord> backup)
+        {
+            HashSet<string> layerNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            LayerTable layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
+            BlockTable blockTable = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+            foreach (ObjectId btrId in blockTable)
+            {
+                BlockTableRecord btr = tr.GetObject(btrId, OpenMode.ForRead) as BlockTableRecord;
+                if (btr == null || (!btr.IsFromExternalReference && !btr.IsFromOverlayReference))
+                {
+                    continue;
+                }
+
+                foreach (ObjectId id in btr)
+                {
+                    Entity entity = tr.GetObject(id, OpenMode.ForRead, false) as Entity;
+                    if (entity == null || !IsFillEntity(entity))
+                    {
+                        continue;
+                    }
+
+                    AddExistingLayerName(layerTable, layerNames, entity.Layer);
+                    AddExistingLayerName(layerTable, layerNames, btr.Name + "|" + entity.Layer);
+                }
+            }
+
+            foreach (ObjectId layerId in layerTable)
+            {
+                LayerTableRecord layer = tr.GetObject(layerId, OpenMode.ForRead) as LayerTableRecord;
+                if (layer == null || !IsXrefDependentLayer(layer))
+                {
+                    continue;
+                }
+
+                if (LooksLikeFillLayer(layer.Name))
+                {
+                    layerNames.Add(layer.Name);
+                }
+            }
+
+            int changed = 0;
+            foreach (string layerName in layerNames)
+            {
+                if (!layerTable.Has(layerName))
+                {
+                    continue;
+                }
+
+                LayerTableRecord layer = (LayerTableRecord)tr.GetObject(layerTable[layerName], OpenMode.ForRead);
+                if (!backup.ContainsKey(layer.Name))
+                {
+                    backup[layer.Name] = LayerStateRecord.FromLayer(layer);
+                }
+
+                if (!layer.IsOff)
+                {
+                    layer.UpgradeOpen();
+                    layer.IsOff = true;
+                    changed++;
+                }
+            }
+
+            return changed;
+        }
+
+        private static int HideLockedBlockFillObjects(Transaction tr, Database db, Dictionary<string, ObjectVisibilityRecord> backup, out int skipped)
+        {
+            skipped = 0;
+            HashSet<ObjectId> lockedBlockDefinitions = new HashSet<ObjectId>();
+            HashSet<ObjectId> unlockedBlockDefinitions = new HashSet<ObjectId>();
+            HashSet<ObjectId> visitedBlockDefinitions = new HashSet<ObjectId>();
+            int changed = 0;
+
+            BlockTableRecord currentSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForRead);
+            foreach (ObjectId id in currentSpace)
+            {
+                BlockReference blockRef = tr.GetObject(id, OpenMode.ForRead, false) as BlockReference;
+                if (blockRef == null || IsXrefBlockTableRecord(tr, blockRef.BlockTableRecord))
+                {
+                    continue;
+                }
+
+                if (IsEntityOnLockedLayer(tr, blockRef))
+                {
+                    lockedBlockDefinitions.Add(blockRef.BlockTableRecord);
+                }
+                else
+                {
+                    unlockedBlockDefinitions.Add(blockRef.BlockTableRecord);
+                }
+            }
+
+            foreach (ObjectId blockTableRecordId in lockedBlockDefinitions)
+            {
+                if (unlockedBlockDefinitions.Contains(blockTableRecordId))
+                {
+                    skipped++;
+                    WriteLog("Skipped locked block fill hide because same block definition has unlocked references: " + blockTableRecordId);
+                    continue;
+                }
+
+                changed += HideFillInBlockDefinition(tr, blockTableRecordId, visitedBlockDefinitions, backup, ref skipped);
+            }
+
+            return changed;
+        }
+
+        private static int HideFillInBlockDefinition(Transaction tr, ObjectId blockTableRecordId, HashSet<ObjectId> visited, Dictionary<string, ObjectVisibilityRecord> backup, ref int skipped)
+        {
+            if (blockTableRecordId.IsNull || blockTableRecordId.IsErased || visited.Contains(blockTableRecordId))
+            {
+                return 0;
+            }
+
+            visited.Add(blockTableRecordId);
+            BlockTableRecord btr = tr.GetObject(blockTableRecordId, OpenMode.ForRead, false) as BlockTableRecord;
+            if (btr == null || btr.IsFromExternalReference || btr.IsFromOverlayReference)
+            {
+                return 0;
+            }
+
+            int changed = 0;
+            foreach (ObjectId id in btr)
+            {
+                Entity entity = tr.GetObject(id, OpenMode.ForRead, false) as Entity;
+                if (entity == null)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                BlockReference nestedBlock = entity as BlockReference;
+                if (nestedBlock != null)
+                {
+                    changed += HideFillInBlockDefinition(tr, nestedBlock.BlockTableRecord, visited, backup, ref skipped);
+                    continue;
+                }
+
+                if (!IsFillEntity(entity))
+                {
+                    continue;
+                }
+
+                string handle = entity.Handle.ToString();
+                if (!backup.ContainsKey(handle))
+                {
+                    backup[handle] = ObjectVisibilityRecord.FromEntity(entity);
+                }
+
+                if (entity.Visible)
+                {
+                    entity.UpgradeOpen();
+                    entity.Visible = false;
+                    changed++;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool IsFillEntity(Entity entity)
+        {
+            return entity is Hatch || entity is Solid;
+        }
+
+        private static bool IsEntityOnLockedLayer(Transaction tr, Entity entity)
+        {
+            if (entity == null || entity.LayerId.IsNull || entity.LayerId.IsErased)
+            {
+                return false;
+            }
+
+            LayerTableRecord layer = tr.GetObject(entity.LayerId, OpenMode.ForRead, false) as LayerTableRecord;
+            return layer != null && layer.IsLocked;
+        }
+
+        private static void AddExistingLayerName(LayerTable layerTable, HashSet<string> layerNames, string layerName)
+        {
+            if (!string.IsNullOrEmpty(layerName) && layerTable.Has(layerName))
+            {
+                layerNames.Add(layerName);
+            }
+        }
+
+        private static bool LooksLikeFillLayer(string layerName)
+        {
+            if (string.IsNullOrEmpty(layerName))
+            {
+                return false;
+            }
+
+            string upper = layerName.ToUpperInvariant();
+            return upper.IndexOf("HATCH", StringComparison.Ordinal) >= 0 ||
+                   upper.IndexOf("FILL", StringComparison.Ordinal) >= 0 ||
+                   upper.IndexOf("SOLID", StringComparison.Ordinal) >= 0 ||
+                   layerName.IndexOf("填充", StringComparison.Ordinal) >= 0 ||
+                   layerName.IndexOf("剖面", StringComparison.Ordinal) >= 0;
         }
 
         private static void ApplyXrefLayerColor(Document doc)
@@ -290,6 +549,7 @@ namespace xrefpick
             ed.WriteMessage("\n当前状态：");
             ed.WriteMessage("\n选择过滤：{0}", enabled ? "已开启" : "已关闭");
             ed.WriteMessage("\n外参改色：{0}", backupStatus.HasBackup ? "已应用，记录 " + backupStatus.RecordCount + " 个图层" : "未改色或无恢复记录");
+            ed.WriteMessage("\n局部填充隐藏：{0}", GetScopedFillBackupStatus(ed.Document.Database));
             ed.WriteMessage("\n日志路径：" + LogPath);
             ed.WriteMessage("\n配置路径：" + ConfigPath);
         }
@@ -829,6 +1089,196 @@ namespace xrefpick
             return layer.IsDependent || layer.Name.IndexOf("|", StringComparison.Ordinal) >= 0;
         }
 
+        private static Dictionary<string, LayerStateRecord> ReadLayerStateBackup(Transaction tr, Database db, string dictionaryName)
+        {
+            Dictionary<string, LayerStateRecord> records = new Dictionary<string, LayerStateRecord>(StringComparer.OrdinalIgnoreCase);
+            Xrecord record = GetXrecord(tr, db, dictionaryName, OpenMode.ForRead);
+            if (record == null || record.Data == null)
+            {
+                return records;
+            }
+
+            TypedValue[] values = record.Data.AsArray();
+            for (int i = 0; i + 1 < values.Length; i += 2)
+            {
+                string layerName = values[i].Value as string;
+                if (string.IsNullOrEmpty(layerName))
+                {
+                    continue;
+                }
+
+                records[layerName] = new LayerStateRecord
+                {
+                    IsOff = Convert.ToInt16(values[i + 1].Value) != 0
+                };
+            }
+
+            return records;
+        }
+
+        private static void WriteLayerStateBackup(Transaction tr, Database db, string dictionaryName, Dictionary<string, LayerStateRecord> records)
+        {
+            Xrecord record = GetOrCreateXrecord(tr, db, dictionaryName);
+            List<TypedValue> values = new List<TypedValue>();
+            foreach (KeyValuePair<string, LayerStateRecord> pair in records)
+            {
+                values.Add(new TypedValue((int)DxfCode.Text, pair.Key));
+                values.Add(new TypedValue((int)DxfCode.Int16, pair.Value.IsOff ? 1 : 0));
+            }
+
+            record.Data = new ResultBuffer(values.ToArray());
+        }
+
+        private static int RestoreLayerStates(Transaction tr, Database db, string dictionaryName)
+        {
+            Dictionary<string, LayerStateRecord> backup = ReadLayerStateBackup(tr, db, dictionaryName);
+            LayerTable layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
+            int restored = 0;
+
+            foreach (KeyValuePair<string, LayerStateRecord> pair in backup)
+            {
+                if (!layerTable.Has(pair.Key))
+                {
+                    continue;
+                }
+
+                LayerTableRecord layer = (LayerTableRecord)tr.GetObject(layerTable[pair.Key], OpenMode.ForWrite);
+                layer.IsOff = pair.Value.IsOff;
+                restored++;
+            }
+
+            RemoveXrecord(tr, db, dictionaryName);
+            return restored;
+        }
+
+        private static Dictionary<string, ObjectVisibilityRecord> ReadObjectVisibilityBackup(Transaction tr, Database db, string dictionaryName)
+        {
+            Dictionary<string, ObjectVisibilityRecord> records = new Dictionary<string, ObjectVisibilityRecord>(StringComparer.OrdinalIgnoreCase);
+            Xrecord record = GetXrecord(tr, db, dictionaryName, OpenMode.ForRead);
+            if (record == null || record.Data == null)
+            {
+                return records;
+            }
+
+            TypedValue[] values = record.Data.AsArray();
+            for (int i = 0; i + 1 < values.Length; i += 2)
+            {
+                string handle = values[i].Value as string;
+                if (string.IsNullOrEmpty(handle))
+                {
+                    continue;
+                }
+
+                records[handle] = new ObjectVisibilityRecord
+                {
+                    Visible = Convert.ToInt16(values[i + 1].Value) != 0
+                };
+            }
+
+            return records;
+        }
+
+        private static void WriteObjectVisibilityBackup(Transaction tr, Database db, string dictionaryName, Dictionary<string, ObjectVisibilityRecord> records)
+        {
+            Xrecord record = GetOrCreateXrecord(tr, db, dictionaryName);
+            List<TypedValue> values = new List<TypedValue>();
+            foreach (KeyValuePair<string, ObjectVisibilityRecord> pair in records)
+            {
+                values.Add(new TypedValue((int)DxfCode.Text, pair.Key));
+                values.Add(new TypedValue((int)DxfCode.Int16, pair.Value.Visible ? 1 : 0));
+            }
+
+            record.Data = new ResultBuffer(values.ToArray());
+        }
+
+        private static RestoreObjectVisibilityResult RestoreObjectVisibility(Transaction tr, Database db, string dictionaryName)
+        {
+            Dictionary<string, ObjectVisibilityRecord> backup = ReadObjectVisibilityBackup(tr, db, dictionaryName);
+            RestoreObjectVisibilityResult result = new RestoreObjectVisibilityResult();
+
+            foreach (KeyValuePair<string, ObjectVisibilityRecord> pair in backup)
+            {
+                ObjectId id;
+                if (!TryGetObjectIdFromHandle(db, pair.Key, out id))
+                {
+                    result.Missing++;
+                    continue;
+                }
+
+                Entity entity = tr.GetObject(id, OpenMode.ForWrite, false) as Entity;
+                if (entity == null)
+                {
+                    result.Missing++;
+                    continue;
+                }
+
+                entity.Visible = pair.Value.Visible;
+                result.Restored++;
+            }
+
+            RemoveXrecord(tr, db, dictionaryName);
+            return result;
+        }
+
+        private static bool TryGetObjectIdFromHandle(Database db, string handleText, out ObjectId id)
+        {
+            id = ObjectId.Null;
+            try
+            {
+                long value = long.Parse(handleText, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                Handle handle = new Handle(value);
+                id = db.GetObjectId(false, handle, 0);
+                return !id.IsNull && !id.IsErased;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static Xrecord GetXrecord(Transaction tr, Database db, string dictionaryName, OpenMode mode)
+        {
+            DBDictionary nod = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
+            if (!nod.Contains(dictionaryName))
+            {
+                return null;
+            }
+
+            return tr.GetObject(nod.GetAt(dictionaryName), mode) as Xrecord;
+        }
+
+        private static Xrecord GetOrCreateXrecord(Transaction tr, Database db, string dictionaryName)
+        {
+            DBDictionary nod = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
+            if (!nod.Contains(dictionaryName))
+            {
+                nod.UpgradeOpen();
+                Xrecord newRecord = new Xrecord();
+                nod.SetAt(dictionaryName, newRecord);
+                tr.AddNewlyCreatedDBObject(newRecord, true);
+            }
+
+            return (Xrecord)tr.GetObject(nod.GetAt(dictionaryName), OpenMode.ForWrite);
+        }
+
+        private static void RemoveXrecord(Transaction tr, Database db, string dictionaryName)
+        {
+            DBDictionary nod = (DBDictionary)tr.GetObject(db.NamedObjectsDictionaryId, OpenMode.ForRead);
+            if (!nod.Contains(dictionaryName))
+            {
+                return;
+            }
+
+            nod.UpgradeOpen();
+            ObjectId recordId = nod.GetAt(dictionaryName);
+            nod.Remove(dictionaryName);
+            DBObject record = tr.GetObject(recordId, OpenMode.ForWrite, false);
+            if (record != null)
+            {
+                record.Erase();
+            }
+        }
+
         private static Dictionary<string, LayerColorRecord> ReadColorBackup(Transaction tr, Database db)
         {
             Dictionary<string, LayerColorRecord> records = new Dictionary<string, LayerColorRecord>(StringComparer.OrdinalIgnoreCase);
@@ -923,6 +1373,23 @@ namespace xrefpick
                 Dictionary<string, LayerColorRecord> backup = ReadColorBackup(tr, db);
                 tr.Commit();
                 return new XrefColorBackupStatus { HasBackup = backup.Count > 0, RecordCount = backup.Count };
+            }
+        }
+
+        private static string GetScopedFillBackupStatus(Database db)
+        {
+            using (Transaction tr = db.TransactionManager.StartOpenCloseTransaction())
+            {
+                int layerCount = ReadLayerStateBackup(tr, db, FillLayerBackupDictionaryName).Count;
+                int objectCount = ReadObjectVisibilityBackup(tr, db, FillObjectBackupDictionaryName).Count;
+                tr.Commit();
+
+                if (layerCount == 0 && objectCount == 0)
+                {
+                    return "正常";
+                }
+
+                return "已隐藏，记录外参填充图层 " + layerCount + " 个，锁定块填充对象 " + objectCount + " 个，可用 U 恢复";
             }
         }
 
@@ -1031,6 +1498,38 @@ namespace xrefpick
         {
             public bool HasBackup;
             public int RecordCount;
+        }
+
+        private class LayerStateRecord
+        {
+            public bool IsOff;
+
+            public static LayerStateRecord FromLayer(LayerTableRecord layer)
+            {
+                return new LayerStateRecord
+                {
+                    IsOff = layer.IsOff
+                };
+            }
+        }
+
+        private class ObjectVisibilityRecord
+        {
+            public bool Visible;
+
+            public static ObjectVisibilityRecord FromEntity(Entity entity)
+            {
+                return new ObjectVisibilityRecord
+                {
+                    Visible = entity.Visible
+                };
+            }
+        }
+
+        private class RestoreObjectVisibilityResult
+        {
+            public int Restored;
+            public int Missing;
         }
 
         private class LayerColorRecord
