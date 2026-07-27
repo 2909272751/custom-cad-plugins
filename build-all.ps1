@@ -14,7 +14,8 @@ $plugins = @(
   "NumberTextHighlightPlugin",
   "numreplace",
   "beamcolor",
-  "xrefpick"
+  "xrefpick",
+  "lbcp"
 )
 
 foreach ($plugin in $plugins) {
