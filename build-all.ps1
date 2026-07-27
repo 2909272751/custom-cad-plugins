@@ -6,12 +6,12 @@ param(
 $ErrorActionPreference = "Stop"
 
 $plugins = @(
-  "OpeningOutlinePlugin",
-  "OuterOutlinePlugin",
-  "HatchOuterPolylinePlugin",
-  "LayerOffsetPlugin",
-  "TextBoxSelectPlugin",
-  "NumberTextHighlightPlugin",
+  "dktrace",
+  "pcoutline",
+  "hatchpl",
+  "loffset",
+  "txtboxsel",
+  "numred",
   "numreplace",
   "beamcolor",
   "xrefpick",

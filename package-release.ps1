@@ -1,16 +1,16 @@
-param(
-  [string]$Version = "0.1.12"
+﻿param(
+  [string]$Version = "0.1.13"
 )
 
 $ErrorActionPreference = "Stop"
 
 $packages = @(
-  @{ Name = "OpeningOutlinePlugin"; Command = "DKTRACE"; Dll = "OpeningOutlinePlugin\dist\OpeningOutlinePlugin-v0.1.1-autocad2022.dll" },
-  @{ Name = "OuterOutlinePlugin"; Command = "PCOUTLINE"; Dll = "OuterOutlinePlugin\dist\OuterOutlinePlugin-v0.1.5-autocad2022.dll" },
-  @{ Name = "HatchOuterPolylinePlugin"; Command = "HATCHPL"; Dll = "HatchOuterPolylinePlugin\dist\HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll" },
-  @{ Name = "LayerOffsetPlugin"; Command = "LOFFSET"; Dll = "LayerOffsetPlugin\dist\LayerOffsetPlugin-v0.1.1-autocad2021.dll" },
-  @{ Name = "TextBoxSelectPlugin"; Command = "TXTBOXSEL"; Dll = "TextBoxSelectPlugin\dist\TextBoxSelectPlugin-v0.1.5-autocad2021.dll" },
-  @{ Name = "NumberTextHighlightPlugin"; Command = "NUMRED"; Dll = "NumberTextHighlightPlugin\dist\NumberTextHighlightPlugin-v0.1.0-autocad2021.dll" },
+  @{ Name = "dktrace"; Command = "DKTRACE"; Dll = "dktrace\dist\dktrace-v0.1.1-autocad2022.dll" },
+  @{ Name = "pcoutline"; Command = "PCOUTLINE"; Dll = "pcoutline\dist\pcoutline-v0.1.5-autocad2022.dll" },
+  @{ Name = "hatchpl"; Command = "HATCHPL"; Dll = "hatchpl\dist\hatchpl-v0.1.11-autocad2022.dll" },
+  @{ Name = "loffset"; Command = "LOFFSET"; Dll = "loffset\dist\loffset-v0.1.1-autocad2021.dll" },
+  @{ Name = "txtboxsel"; Command = "TXTBOXSEL"; Dll = "txtboxsel\dist\txtboxsel-v0.1.5-autocad2021.dll" },
+  @{ Name = "numred"; Command = "NUMRED"; Dll = "numred\dist\numred-v0.1.0-autocad2021.dll" },
   @{ Name = "numreplace"; Command = "NUMREPLACE"; Dll = "numreplace\dist\numreplace-v0.1.1-autocad2021.dll" },
   @{ Name = "beamcolor"; Command = "BEAMCOLOR"; Dll = "beamcolor\dist\beamcolor-v0.1.8-autocad2021.dll" },
   @{ Name = "xrefpick"; Command = "XREFPICK"; Dll = "xrefpick\dist\xrefpick-v0.1.7-autocad2021.dll" },

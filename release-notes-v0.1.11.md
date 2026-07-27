@@ -1,25 +1,19 @@
-# custom-cad-plugins v0.1.11
+﻿# custom-cad-plugins v0.1.11
 
-本次发布更新 `xrefpick` 到 `v0.1.7`。
-
-## 更新
+鏈鍙戝竷鏇存柊 `xrefpick` 鍒?`v0.1.7`銆?
+## 鏇存柊
 
 - `xrefpick-v0.1.7-autocad2021.zip`
-  - 命令：`XREFPICK`
-  - 新增 `H`：局部隐藏填充。
-    - 外参：隐藏外参依赖填充图层，不影响本图同名图层。
-    - 锁定普通块：隐藏块定义内 Hatch/Solid 对象，并记录恢复。
-  - 新增 `U`：恢复局部隐藏的填充图层和填充对象。
-  - 保留外参/锁定图层选择过滤、外参改色/恢复、日志命令 `XREFPICKLOG`。
+  - 鍛戒护锛歚XREFPICK`
+  - 鏂板 `H`锛氬眬閮ㄩ殣钘忓～鍏呫€?    - 澶栧弬锛氶殣钘忓鍙備緷璧栧～鍏呭浘灞傦紝涓嶅奖鍝嶆湰鍥惧悓鍚嶅浘灞傘€?    - 閿佸畾鏅€氬潡锛氶殣钘忓潡瀹氫箟鍐?Hatch/Solid 瀵硅薄锛屽苟璁板綍鎭㈠銆?  - 鏂板 `U`锛氭仮澶嶅眬閮ㄩ殣钘忕殑濉厖鍥惧眰鍜屽～鍏呭璞°€?  - 淇濈暀澶栧弬/閿佸畾鍥惧眰閫夋嫨杩囨护銆佸鍙傛敼鑹?鎭㈠銆佹棩蹇楀懡浠?`XREFPICKLOG`銆?
+## 缁х画鍖呭惈
 
-## 继续包含
-
-- `OpeningOutlinePlugin-v0.1.1-autocad2022.zip`
-- `OuterOutlinePlugin-v0.1.5-autocad2022.zip`
-- `HatchOuterPolylinePlugin-v0.1.11-autocad2022.zip`
-- `LayerOffsetPlugin-v0.1.1-autocad2021.zip`
-- `TextBoxSelectPlugin-v0.1.5-autocad2021.zip`
-- `NumberTextHighlightPlugin-v0.1.0-autocad2021.zip`
+- `dktrace-v0.1.1-autocad2022.zip`
+- `pcoutline-v0.1.5-autocad2022.zip`
+- `hatchpl-v0.1.11-autocad2022.zip`
+- `loffset-v0.1.1-autocad2021.zip`
+- `txtboxsel-v0.1.5-autocad2021.zip`
+- `numred-v0.1.0-autocad2021.zip`
 - `numreplace-v0.1.1-autocad2021.zip`
 - `beamcolor-v0.1.8-autocad2021.zip`
 - `custom-cad-plugins-v0.1.11-quick-guide.txt`

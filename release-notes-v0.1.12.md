@@ -1,23 +1,19 @@
-# custom-cad-plugins v0.1.12
+﻿# custom-cad-plugins v0.1.12
 
-本次发布新增 `lbcp` 梁表重排插件，并更新 `lbcp` 到 `v0.1.1`。
-
-## 更新
+鏈鍙戝竷鏂板 `lbcp` 姊佽〃閲嶆帓鎻掍欢锛屽苟鏇存柊 `lbcp` 鍒?`v0.1.1`銆?
+## 鏇存柊
 
 - `lbcp-v0.1.1-autocad2021.zip`
-  - 命令：`LBCP`
-  - 按编号列分类和数字顺序重排梁表文字行。
-  - 表头不会参与移动，只处理能识别为梁编号的行。
-  - 分类顺序提示改为“请输入分类顺序，如 L,LL,KL,XL <L,LL,KL,XL>:”。
+  - 鍛戒护锛歚LBCP`
+  - 鎸夌紪鍙峰垪鍒嗙被鍜屾暟瀛楅『搴忛噸鎺掓琛ㄦ枃瀛楄銆?  - 琛ㄥご涓嶄細鍙備笌绉诲姩锛屽彧澶勭悊鑳借瘑鍒负姊佺紪鍙风殑琛屻€?  - 鍒嗙被椤哄簭鎻愮ず鏀逛负鈥滆杈撳叆鍒嗙被椤哄簭锛屽 L,LL,KL,XL <L,LL,KL,XL>:鈥濄€?
+## 缁х画鍖呭惈
 
-## 继续包含
-
-- `OpeningOutlinePlugin-v0.1.1-autocad2022.zip`
-- `OuterOutlinePlugin-v0.1.5-autocad2022.zip`
-- `HatchOuterPolylinePlugin-v0.1.11-autocad2022.zip`
-- `LayerOffsetPlugin-v0.1.1-autocad2021.zip`
-- `TextBoxSelectPlugin-v0.1.5-autocad2021.zip`
-- `NumberTextHighlightPlugin-v0.1.0-autocad2021.zip`
+- `dktrace-v0.1.1-autocad2022.zip`
+- `pcoutline-v0.1.5-autocad2022.zip`
+- `hatchpl-v0.1.11-autocad2022.zip`
+- `loffset-v0.1.1-autocad2021.zip`
+- `txtboxsel-v0.1.5-autocad2021.zip`
+- `numred-v0.1.0-autocad2021.zip`
 - `numreplace-v0.1.1-autocad2021.zip`
 - `beamcolor-v0.1.8-autocad2021.zip`
 - `xrefpick-v0.1.7-autocad2021.zip`

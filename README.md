@@ -1,172 +1,161 @@
-# 自建 CAD 插件
+﻿# 鑷缓 CAD 鎻掍欢
 
-> 本项目 100% 由 Codex 生成。
+> 鏈」鐩?100% 鐢?Codex 鐢熸垚銆?
+杩欎釜浠撳簱鏄竴涓?AutoCAD 鎻掍欢鍚堥泦锛岀洰鍓嶅寘鍚?10 涓郊姝ょ嫭绔嬬殑鎻掍欢銆?
+姣忎釜鎻掍欢閮芥湁鑷繁鐨勬簮鐮併€佹瀯寤鸿剼鏈€佸彂甯?DLL 鍜?README銆備綘鍙互鎶婂畠褰撴垚涓€涓€婚」鐩鐞嗭紝涔熷彲浠ュ崟鐙繘鍏ユ煇涓彃浠剁洰褰曟煡鐪嬭鏄庛€佺紪璇戞垨鍔犺浇銆?
 
-这个仓库是一个 AutoCAD 插件合集，目前包含 10 个彼此独立的插件。
+## 鎻掍欢涓嬭浇
 
-每个插件都有自己的源码、构建脚本、发布 DLL 和 README。你可以把它当成一个总项目管理，也可以单独进入某个插件目录查看说明、编译或加载。
-
-## 插件下载
-
-| 插件 | 命令 | 一句话功能 | 下载 |
+| 鎻掍欢 | 鍛戒护 | 涓€鍙ヨ瘽鍔熻兘 | 涓嬭浇 |
 | --- | --- | --- | --- |
-| 简易说明 | - | 简短说明各插件分别做什么，以及通用 NETLOAD 加载方法。 | [下载 TXT（自建CAD插件-v0.1.12-简易说明）](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/custom-cad-plugins-v0.1.12-quick-guide.txt) |
-| `OpeningOutlinePlugin` | `DKTRACE` | 根据开洞符号和边界图层，生成洞口闭合轮廓线。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/OpeningOutlinePlugin-v0.1.1-autocad2022.zip) |
-| `OuterOutlinePlugin` | `PCOUTLINE` | 从楼层或构件边线中提取干净的外轮廓闭合线。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/OuterOutlinePlugin-v0.1.5-autocad2022.zip) |
-| `HatchOuterPolylinePlugin` | `HATCHPL` | 从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/HatchOuterPolylinePlugin-v0.1.11-autocad2022.zip) |
-| `LayerOffsetPlugin` | `LOFFSET` | 按图层和框选区域批量 offset 曲线对象，可选择内外方向、是否删除原图和 offset 后颜色。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/LayerOffsetPlugin-v0.1.1-autocad2021.zip) |
-| `TextBoxSelectPlugin` | `TXTBOXSEL` | 选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/TextBoxSelectPlugin-v0.1.5-autocad2021.zip) |
-| `NumberTextHighlightPlugin` | `NUMRED` | 按大于、等于、小于条件把选定文字图层中的数字文字标红。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/NumberTextHighlightPlugin-v0.1.0-autocad2021.zip) |
-| `numreplace` | `NUMREPLACE` | 按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/numreplace-v0.1.1-autocad2021.zip) |
-| `beamcolor` | `BEAMCOLOR` | 按梁编号前缀批量修改梁编号文字和目标图层线条颜色，跳过配筋文字。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/beamcolor-v0.1.8-autocad2021.zip) |
-| `xrefpick` | `XREFPICK` | 过滤 DWG 外部参照和锁定图层选择，可局部隐藏外参/锁定块填充并一键恢复。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/xrefpick-v0.1.7-autocad2021.zip) |
-| `lbcp` | `LBCP` | 按编号列分类和数字顺序重排梁表文字行，表头不参与移动。 | [下载 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.12/lbcp-v0.1.1-autocad2021.zip) |
+| 绠€鏄撹鏄?| - | 绠€鐭鏄庡悇鎻掍欢鍒嗗埆鍋氫粈涔堬紝浠ュ強閫氱敤 NETLOAD 鍔犺浇鏂规硶銆?| [涓嬭浇 TXT锛堣嚜寤篊AD鎻掍欢-v0.1.13-绠€鏄撹鏄庯級](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/custom-cad-plugins-v0.1.13-quick-guide.txt) |
+| `dktrace` | `DKTRACE` | 鏍规嵁寮€娲炵鍙峰拰杈圭晫鍥惧眰锛岀敓鎴愭礊鍙ｉ棴鍚堣疆寤撶嚎銆?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/dktrace-v0.1.1-autocad2022.zip) |
+| `pcoutline` | `PCOUTLINE` | 浠庢ゼ灞傛垨鏋勪欢杈圭嚎涓彁鍙栧共鍑€鐨勫杞粨闂悎绾裤€?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/pcoutline-v0.1.5-autocad2022.zip) |
+| `hatchpl` | `HATCHPL` | 浠?Hatch 鐩存帴鎻愬彇鏈€澶栧眰闂悎 Polyline锛屽拷鐣ュ唴閮ㄥ皬娲炲拰鏂囧瓧娲炪€?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/hatchpl-v0.1.11-autocad2022.zip) |
+| `loffset` | `LOFFSET` | 鎸夊浘灞傚拰妗嗛€夊尯鍩熸壒閲?offset 鏇茬嚎瀵硅薄锛屽彲閫夋嫨鍐呭鏂瑰悜銆佹槸鍚﹀垹闄ゅ師鍥惧拰 offset 鍚庨鑹层€?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/loffset-v0.1.1-autocad2021.zip) |
+| `txtboxsel` | `TXTBOXSEL` | 閫変腑妗嗛€夎寖鍥村唴鍖呭惈鏂囧瓧鐨勫皝闂?PL 妗嗭紝骞惰嚜鍔ㄩ€変腑瀵瑰簲鏂囧瓧銆?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/txtboxsel-v0.1.5-autocad2021.zip) |
+| `numred` | `NUMRED` | 鎸夊ぇ浜庛€佺瓑浜庛€佸皬浜庢潯浠舵妸閫夊畾鏂囧瓧鍥惧眰涓殑鏁板瓧鏂囧瓧鏍囩孩銆?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/numred-v0.1.0-autocad2021.zip) |
+| `numreplace` | `NUMREPLACE` | 鎸夋潯浠舵壒閲忔浛鎹㈤€夊畾鏂囧瓧鍥惧眰涓殑鏁板瓧鏂囧瓧锛屽彲鏇挎崲鎴愬浐瀹氬€兼垨鍖洪棿闅忔満鍊笺€?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/numreplace-v0.1.1-autocad2021.zip) |
+| `beamcolor` | `BEAMCOLOR` | 鎸夋缂栧彿鍓嶇紑鎵归噺淇敼姊佺紪鍙锋枃瀛楀拰鐩爣鍥惧眰绾挎潯棰滆壊锛岃烦杩囬厤绛嬫枃瀛椼€?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/beamcolor-v0.1.8-autocad2021.zip) |
+| `xrefpick` | `XREFPICK` | 杩囨护 DWG 澶栭儴鍙傜収鍜岄攣瀹氬浘灞傞€夋嫨锛屽彲灞€閮ㄩ殣钘忓鍙?閿佸畾鍧楀～鍏呭苟涓€閿仮澶嶃€?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/xrefpick-v0.1.7-autocad2021.zip) |
+| `lbcp` | `LBCP` | 鎸夌紪鍙峰垪鍒嗙被鍜屾暟瀛楅『搴忛噸鎺掓琛ㄦ枃瀛楄锛岃〃澶翠笉鍙備笌绉诲姩銆?| [涓嬭浇 ZIP](https://github.com/2909272751/custom-cad-plugins/releases/download/v0.1.13/lbcp-v0.1.1-autocad2021.zip) |
 
-## 新手怎么用
+## 鏂版墜鎬庝箞鐢?
 
-1. 下载需要的 ZIP。
-2. 解压 ZIP。
-3. 运行解压目录里的 `unblock.ps1`。
-4. 打开 AutoCAD。
-5. 在命令行输入 `NETLOAD`。
-6. 选择解压目录里的 DLL。
-7. 输入对应插件命令运行。
-
-例如使用 Hatch 外轮廓插件：
+1. 涓嬭浇闇€瑕佺殑 ZIP銆?2. 瑙ｅ帇 ZIP銆?3. 杩愯瑙ｅ帇鐩綍閲岀殑 `unblock.ps1`銆?4. 鎵撳紑 AutoCAD銆?5. 鍦ㄥ懡浠よ杈撳叆 `NETLOAD`銆?6. 閫夋嫨瑙ｅ帇鐩綍閲岀殑 DLL銆?7. 杈撳叆瀵瑰簲鎻掍欢鍛戒护杩愯銆?
+渚嬪浣跨敤 Hatch 澶栬疆寤撴彃浠讹細
 
 ```text
 NETLOAD
 ```
 
-解压 ZIP 后选择：
-
+瑙ｅ帇 ZIP 鍚庨€夋嫨锛?
 ```text
-HatchOuterPolylinePlugin-v0.1.11-autocad2022.dll
+hatchpl-v0.1.11-autocad2022.dll
 ```
 
-然后运行：
+鐒跺悗杩愯锛?
 
 ```text
 HATCHPL
 ```
 
-## 详细说明
+## 璇︾粏璇存槑
 
-每个插件目录里都有独立 README：
+姣忎釜鎻掍欢鐩綍閲岄兘鏈夌嫭绔?README锛?
 
-| 插件 | 说明 |
+| 鎻掍欢 | 璇存槑 |
 | --- | --- |
-| [`OpeningOutlinePlugin`](./OpeningOutlinePlugin/README.md) | `DKTRACE` 的详细使用步骤、日志和测试方法 |
-| [`OuterOutlinePlugin`](./OuterOutlinePlugin/README.md) | `PCOUTLINE` 的详细使用步骤、图层选择和外轮廓生成说明 |
-| [`HatchOuterPolylinePlugin`](./HatchOuterPolylinePlugin/README.md) | `HATCHPL` 的详细使用步骤、Hatch 样本选择和小洞补齐说明 |
-| [`LayerOffsetPlugin`](./LayerOffsetPlugin/README.md) | `LOFFSET` 的详细使用步骤、图层确认、框选范围和 offset 说明 |
-| [`TextBoxSelectPlugin`](./TextBoxSelectPlugin/README.md) | `TXTBOXSEL` 的详细使用步骤、框线图层、文字图层和识别规则说明 |
-| [`NumberTextHighlightPlugin`](./NumberTextHighlightPlugin/README.md) | `NUMRED` 的详细使用步骤、数字识别规则和日志说明 |
-| [`numreplace`](./numreplace/README.md) | `NUMREPLACE` 的详细使用步骤、区间匹配、固定值/区间随机替换规则和日志说明 |
-| [`beamcolor`](./beamcolor/README.md) | `BEAMCOLOR` 的详细使用步骤、梁编号匹配规则、预览确认和日志说明 |
-| [`xrefpick`](./xrefpick/README.md) | `XREFPICK` 的外部参照选择过滤、状态切换和日志说明 |
-| [`lbcp`](./lbcp/README.md) | `LBCP` 的梁表文字行重排、分类顺序和日志说明 |
+| [`dktrace`](./dktrace/README.md) | `DKTRACE` 鐨勮缁嗕娇鐢ㄦ楠ゃ€佹棩蹇楀拰娴嬭瘯鏂规硶 |
+| [`pcoutline`](./pcoutline/README.md) | `PCOUTLINE` 鐨勮缁嗕娇鐢ㄦ楠ゃ€佸浘灞傞€夋嫨鍜屽杞粨鐢熸垚璇存槑 |
+| [`hatchpl`](./hatchpl/README.md) | `HATCHPL` 鐨勮缁嗕娇鐢ㄦ楠ゃ€丠atch 鏍锋湰閫夋嫨鍜屽皬娲炶ˉ榻愯鏄?|
+| [`loffset`](./loffset/README.md) | `LOFFSET` 鐨勮缁嗕娇鐢ㄦ楠ゃ€佸浘灞傜‘璁ゃ€佹閫夎寖鍥村拰 offset 璇存槑 |
+| [`txtboxsel`](./txtboxsel/README.md) | `TXTBOXSEL` 鐨勮缁嗕娇鐢ㄦ楠ゃ€佹绾垮浘灞傘€佹枃瀛楀浘灞傚拰璇嗗埆瑙勫垯璇存槑 |
+| [`numred`](./numred/README.md) | `NUMRED` 鐨勮缁嗕娇鐢ㄦ楠ゃ€佹暟瀛楄瘑鍒鍒欏拰鏃ュ織璇存槑 |
+| [`numreplace`](./numreplace/README.md) | `NUMREPLACE` 鐨勮缁嗕娇鐢ㄦ楠ゃ€佸尯闂村尮閰嶃€佸浐瀹氬€?鍖洪棿闅忔満鏇挎崲瑙勫垯鍜屾棩蹇楄鏄?|
+| [`beamcolor`](./beamcolor/README.md) | `BEAMCOLOR` 鐨勮缁嗕娇鐢ㄦ楠ゃ€佹缂栧彿鍖归厤瑙勫垯銆侀瑙堢‘璁ゅ拰鏃ュ織璇存槑 |
+| [`xrefpick`](./xrefpick/README.md) | `XREFPICK` 鐨勫閮ㄥ弬鐓ч€夋嫨杩囨护銆佺姸鎬佸垏鎹㈠拰鏃ュ織璇存槑 |
+| [`lbcp`](./lbcp/README.md) | `LBCP` 鐨勬琛ㄦ枃瀛楄閲嶆帓銆佸垎绫婚『搴忓拰鏃ュ織璇存槑 |
 
-## 目录结构
+## 鐩綍缁撴瀯
 
 ```text
-自建cad插件/
-├─ README.md
-├─ build-all.ps1
-├─ OpeningOutlinePlugin/
-│  ├─ README.md
-│  ├─ OpeningOutlinePlugin.cs
-│  ├─ build.ps1
-│  └─ dist/
-├─ OuterOutlinePlugin/
-│  ├─ README.md
-│  ├─ OuterOutlinePlugin.cs
-│  ├─ build.ps1
-│  └─ dist/
-├─ HatchOuterPolylinePlugin/
-   ├─ README.md
-   ├─ HatchOuterPolylinePlugin.cs
-   ├─ build.ps1
-   └─ dist/
-├─ LayerOffsetPlugin/
-   ├─ README.md
-   ├─ LayerOffsetPlugin.cs
-   ├─ build.ps1
-   └─ dist/
-├─ TextBoxSelectPlugin/
-   ├─ README.md
-   ├─ TextBoxSelectPlugin.cs
-   ├─ build.ps1
-   └─ dist/
-├─ NumberTextHighlightPlugin/
-   ├─ README.md
-   ├─ NumberTextHighlightPlugin.cs
-   ├─ build.ps1
-   └─ dist/
-└─ numreplace/
-   ├─ README.md
-   ├─ numreplace.cs
-   ├─ build.ps1
-   └─ dist/
-└─ xrefpick/
-   ├─ README.md
-   ├─ xrefpick.cs
-   ├─ build.ps1
-   └─ dist/
-└─ beamcolor/
-   ├─ README.md
-   ├─ beamcolor.cs
-   ├─ build.ps1
-   └─ dist/
-└─ lbcp/
-   ├─ README.md
-   ├─ lbcp.cs
-   ├─ build.ps1
-   └─ dist/
+鑷缓cad鎻掍欢/
+鈹溾攢 README.md
+鈹溾攢 build-all.ps1
+鈹溾攢 dktrace/
+鈹? 鈹溾攢 README.md
+鈹? 鈹溾攢 dktrace.cs
+鈹? 鈹溾攢 build.ps1
+鈹? 鈹斺攢 dist/
+鈹溾攢 pcoutline/
+鈹? 鈹溾攢 README.md
+鈹? 鈹溾攢 pcoutline.cs
+鈹? 鈹溾攢 build.ps1
+鈹? 鈹斺攢 dist/
+鈹溾攢 hatchpl/
+   鈹溾攢 README.md
+   鈹溾攢 hatchpl.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
+鈹溾攢 loffset/
+   鈹溾攢 README.md
+   鈹溾攢 loffset.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
+鈹溾攢 txtboxsel/
+   鈹溾攢 README.md
+   鈹溾攢 txtboxsel.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
+鈹溾攢 numred/
+   鈹溾攢 README.md
+   鈹溾攢 numred.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
+鈹斺攢 numreplace/
+   鈹溾攢 README.md
+   鈹溾攢 numreplace.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
+鈹斺攢 xrefpick/
+   鈹溾攢 README.md
+   鈹溾攢 xrefpick.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
+鈹斺攢 beamcolor/
+   鈹溾攢 README.md
+   鈹溾攢 beamcolor.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
+鈹斺攢 lbcp/
+   鈹溾攢 README.md
+   鈹溾攢 lbcp.cs
+   鈹溾攢 build.ps1
+   鈹斺攢 dist/
 ```
 
-## 统一编译
+## 缁熶竴缂栬瘧
 
-默认按 AutoCAD 2022 编译：
+榛樿鎸?AutoCAD 2022 缂栬瘧锛?
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-all.ps1
 ```
 
-如果要指定 AutoCAD 安装目录：
+濡傛灉瑕佹寚瀹?AutoCAD 瀹夎鐩綍锛?
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build-all.ps1 -AcadPath "C:\Program Files\Autodesk\AutoCAD 2022" -AcadLabel "autocad2022"
 ```
 
-每个插件也可以单独编译：
+姣忎釜鎻掍欢涔熷彲浠ュ崟鐙紪璇戯細
 
 ```powershell
-cd .\HatchOuterPolylinePlugin
+cd .\hatchpl
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-## 加载 ZIP 注意事项
+## 鍔犺浇 ZIP 娉ㄦ剰浜嬮」
 
-AutoCAD 的 `.NET` 插件加载后通常不能真正卸载。如果你加载了旧 DLL，又重新编译了新 DLL，建议重启 AutoCAD 后再 `NETLOAD` 新版本。
-
-发布包统一改为 ZIP。ZIP 内包含 DLL、`README.txt` 和 `unblock.ps1`。如果 `NETLOAD` 报“不支持操作”或 `FileLoadException`，先在解压目录运行：
+AutoCAD 鐨?`.NET` 鎻掍欢鍔犺浇鍚庨€氬父涓嶈兘鐪熸鍗歌浇銆傚鏋滀綘鍔犺浇浜嗘棫 DLL锛屽張閲嶆柊缂栬瘧浜嗘柊 DLL锛屽缓璁噸鍚?AutoCAD 鍚庡啀 `NETLOAD` 鏂扮増鏈€?
+鍙戝竷鍖呯粺涓€鏀逛负 ZIP銆俍IP 鍐呭寘鍚?DLL銆乣README.txt` 鍜?`unblock.ps1`銆傚鏋?`NETLOAD` 鎶モ€滀笉鏀寔鎿嶄綔鈥濇垨 `FileLoadException`锛屽厛鍦ㄨВ鍘嬬洰褰曡繍琛岋細
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\unblock.ps1
 ```
 
-## 日志
+## 鏃ュ織
 
-每个插件都有日志命令，出问题时先运行日志命令查看日志路径。
+姣忎釜鎻掍欢閮芥湁鏃ュ織鍛戒护锛屽嚭闂鏃跺厛杩愯鏃ュ織鍛戒护鏌ョ湅鏃ュ織璺緞銆?
 
-| 插件 | 日志命令 | 默认日志 |
+| 鎻掍欢 | 鏃ュ織鍛戒护 | 榛樿鏃ュ織 |
 | --- | --- | --- |
-| `OpeningOutlinePlugin` | `DKLOG` | `%TEMP%\DKTRACE.log` |
-| `OuterOutlinePlugin` | `PCLOG` | `%TEMP%\PCOUTLINE.log` |
-| `HatchOuterPolylinePlugin` | `HATCHPLLOG` | `%TEMP%\HATCHPL.log` |
-| `TextBoxSelectPlugin` | `TXTBOXLOG` | `%TEMP%\TXTBOXSEL.log` |
-| `NumberTextHighlightPlugin` | `NUMREDLOG` | `%TEMP%\NUMRED.log` |
+| `dktrace` | `DKLOG` | `%TEMP%\DKTRACE.log` |
+| `pcoutline` | `PCLOG` | `%TEMP%\PCOUTLINE.log` |
+| `hatchpl` | `HATCHPLLOG` | `%TEMP%\HATCHPL.log` |
+| `txtboxsel` | `TXTBOXLOG` | `%TEMP%\TXTBOXSEL.log` |
+| `numred` | `NUMREDLOG` | `%TEMP%\NUMRED.log` |
 | `numreplace` | `NUMREPLACELOG` | `%TEMP%\NUMREPLACE.log` |
 | `beamcolor` | `BEAMCOLORLOG` | `%TEMP%\BEAMCOLOR.log` |
 | `xrefpick` | `XREFPICKLOG` | `%TEMP%\XREFPICK.log` |
@@ -174,15 +163,15 @@ powershell -ExecutionPolicy Bypass -File .\unblock.ps1
 
 ## Release
 
-当前已发布合集版本是 `v0.1.12`，包含：
+褰撳墠宸插彂甯冨悎闆嗙増鏈槸 `v0.1.13`锛屽寘鍚細
 
-- `custom-cad-plugins-v0.1.12-quick-guide.txt`
-- `OpeningOutlinePlugin-v0.1.1-autocad2022.zip`
-- `OuterOutlinePlugin-v0.1.5-autocad2022.zip`
-- `HatchOuterPolylinePlugin-v0.1.11-autocad2022.zip`
-- `LayerOffsetPlugin-v0.1.1-autocad2021.zip`
-- `TextBoxSelectPlugin-v0.1.5-autocad2021.zip`
-- `NumberTextHighlightPlugin-v0.1.0-autocad2021.zip`
+- `custom-cad-plugins-v0.1.13-quick-guide.txt`
+- `dktrace-v0.1.1-autocad2022.zip`
+- `pcoutline-v0.1.5-autocad2022.zip`
+- `hatchpl-v0.1.11-autocad2022.zip`
+- `loffset-v0.1.1-autocad2021.zip`
+- `txtboxsel-v0.1.5-autocad2021.zip`
+- `numred-v0.1.0-autocad2021.zip`
 - `numreplace-v0.1.1-autocad2021.zip`
 - `beamcolor-v0.1.8-autocad2021.zip`
 - `xrefpick-v0.1.7-autocad2021.zip`
