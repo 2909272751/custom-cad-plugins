@@ -1,5 +1,5 @@
 param(
-  [string]$Version = "0.1.13"
+  [string]$Version = "0.1.14"
 )
 
 $ErrorActionPreference = "Stop"
@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $packages = @(
   @{ Name = "dktrace"; Command = "DKTRACE"; Dll = "dktrace\dist\dktrace-v0.1.1-autocad2022.dll" },
   @{ Name = "pcoutline"; Command = "PCOUTLINE"; Dll = "pcoutline\dist\pcoutline-v0.1.5-autocad2022.dll" },
-  @{ Name = "hatchpl"; Command = "HATCHPL"; Dll = "hatchpl\dist\hatchpl-v0.1.11-autocad2022.dll" },
+  @{ Name = "hatchpl"; Command = "HATCHPL"; Dll = "hatchpl\dist\hatchpl-v0.1.12-autocad2022.dll" },
   @{ Name = "loffset"; Command = "LOFFSET"; Dll = "loffset\dist\loffset-v0.1.1-autocad2021.dll" },
   @{ Name = "txtboxsel"; Command = "TXTBOXSEL"; Dll = "txtboxsel\dist\txtboxsel-v0.1.5-autocad2021.dll" },
   @{ Name = "numred"; Command = "NUMRED"; Dll = "numred\dist\numred-v0.1.0-autocad2021.dll" },

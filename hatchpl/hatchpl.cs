@@ -499,6 +499,7 @@ namespace hatchpl
             if (vertices.Count < 4) return source;
 
             ext = GetExtents(vertices);
+            double originalArea = Math.Max(1.0, Math.Abs(PolygonArea(vertices)));
             double totalBoxArea = Math.Max(1.0, (ext.MaxPoint.X - ext.MinPoint.X) * (ext.MaxPoint.Y - ext.MinPoint.Y));
 
             bool changed = true;
@@ -528,6 +529,12 @@ namespace hatchpl
 
                         if ((subBoxArea <= totalBoxArea * 0.08 && maxDim <= totalMaxDim * 0.35) || smallByUserRule)
                         {
+                            List<VertexData> testVertices = new List<VertexData>(vertices);
+                            testVertices.RemoveRange(i + 1, j - i - 1);
+                            testVertices[i] = new VertexData(testVertices[i].Point, 0.0);
+                            if (!IsSafeCleanupResult(testVertices, originalArea, "repeated-point detour"))
+                                continue;
+
                             Log("Removed small repeated-point detour: start=" + i.ToString(CultureInfo.InvariantCulture) +
                                 " end=" + j.ToString(CultureInfo.InvariantCulture) +
                                 " subW=" + subW.ToString("0.###", CultureInfo.InvariantCulture) +
@@ -580,6 +587,24 @@ namespace hatchpl
 
                         if (!smallByUserRule) continue;
 
+                        if (vertices.Count - (span - 1) < 3)
+                        {
+                            Log("Skipped small edge notch cleanup because it would leave fewer than 3 vertices: start=" +
+                                i.ToString(CultureInfo.InvariantCulture) +
+                                " end=" + end.ToString(CultureInfo.InvariantCulture) +
+                                " vertices=" + vertices.Count.ToString(CultureInfo.InvariantCulture) +
+                                " span=" + span.ToString(CultureInfo.InvariantCulture));
+                            continue;
+                        }
+
+                        List<VertexData> testVertices = new List<VertexData>(vertices);
+                        RemoveCyclicRange(testVertices, i + 1, span - 1);
+                        int testAnchorIndex = FindVertexIndex(testVertices, a, axisTol);
+                        if (testAnchorIndex >= 0)
+                            testVertices[testAnchorIndex] = new VertexData(testVertices[testAnchorIndex].Point, 0.0);
+                        if (!IsSafeCleanupResult(testVertices, originalArea, "edge notch"))
+                            continue;
+
                         Log("Removed small edge notch: start=" + i.ToString(CultureInfo.InvariantCulture) +
                             " end=" + end.ToString(CultureInfo.InvariantCulture) +
                             " subW=" + subW.ToString("0.###", CultureInfo.InvariantCulture) +
@@ -596,6 +621,27 @@ namespace hatchpl
             }
 
             return BuildPolyline(vertices, layerName);
+        }
+
+        private static bool IsSafeCleanupResult(List<VertexData> vertices, double originalArea, string cleanupName)
+        {
+            if (vertices.Count < 3)
+            {
+                Log("Skipped " + cleanupName + " cleanup because result has fewer than 3 vertices");
+                return false;
+            }
+
+            double newArea = Math.Abs(PolygonArea(vertices));
+            double minArea = Math.Max(1.0, originalArea * 0.5);
+            if (newArea < minArea)
+            {
+                Log("Skipped " + cleanupName + " cleanup because area would shrink too much: originalArea=" +
+                    originalArea.ToString("0.###", CultureInfo.InvariantCulture) +
+                    " newArea=" + newArea.ToString("0.###", CultureInfo.InvariantCulture));
+                return false;
+            }
+
+            return true;
         }
 
         private static void RemoveClosingDuplicate(List<VertexData> vertices, double tolerance)
@@ -650,6 +696,20 @@ namespace hatchpl
             for (int i = 0; i < pl.NumberOfVertices; i++)
                 vertices.Add(new VertexData(pl.GetPoint2dAt(i), pl.GetBulgeAt(i)));
             return vertices;
+        }
+
+        private static double PolygonArea(List<VertexData> vertices)
+        {
+            if (vertices.Count < 3) return 0.0;
+
+            double area = 0.0;
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Point2d a = vertices[i].Point;
+                Point2d b = vertices[(i + 1) % vertices.Count].Point;
+                area += a.X * b.Y - b.X * a.Y;
+            }
+            return area * 0.5;
         }
 
         private static Polyline BuildPolyline(List<VertexData> vertices, string layerName)

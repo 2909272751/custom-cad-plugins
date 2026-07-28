@@ -34,7 +34,7 @@ NETLOAD
 选择 DLL：
 
 ```text
-dist\hatchpl-v0.1.11-autocad2022.dll
+dist\hatchpl-v0.1.12-autocad2022.dll
 ```
 
 加载后运行：
@@ -109,5 +109,5 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "C:\Program Files
 构建产物：
 
 ```text
-dist\hatchpl-v0.1.11-autocad2022.dll
+dist\hatchpl-v0.1.12-autocad2022.dll
 ```

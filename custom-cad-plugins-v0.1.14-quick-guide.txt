@@ -1,0 +1,43 @@
+自建 CAD 插件 v0.1.14 简易说明
+
+本项目 100% 由 Codex 生成。
+
+通用加载方法：
+1. 下载需要的 ZIP。
+2. 解压 ZIP。
+3. 在解压目录运行 unblock.ps1。
+4. 打开 AutoCAD，输入 NETLOAD。
+5. 选择解压出来的 DLL。
+6. 输入对应命令运行。
+
+插件列表：
+
+DKTRACE
+dktrace：根据开洞符号和边界图层，生成洞口闭合轮廓线。
+
+PCOUTLINE
+pcoutline：从楼层或构件边线中提取干净的外轮廓闭合线。
+
+HATCHPL
+hatchpl：从 Hatch 直接提取最外层闭合 Polyline，忽略内部小洞和文字洞。v0.1.12 修复小尺寸矩形 Hatch 被误清理成一根线的问题。
+
+LOFFSET
+loffset：按图层和框选区域批量 offset 曲线对象，可选择方向、是否删除原图和 offset 后颜色。
+
+TXTBOXSEL
+txtboxsel：选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。
+
+NUMRED
+numred：按大于、等于、小于条件把选定文字图层中的数字文字标红。
+
+NUMREPLACE
+numreplace：按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。
+
+BEAMCOLOR
+beamcolor：按梁编号前缀批量修改梁编号文字和目标图层线条颜色，跳过配筋文字。
+
+XREFPICK
+xrefpick：过滤 DWG 外部参照和锁定图层选择，可局部隐藏外参/锁定块填充并一键恢复。
+
+LBCP
+lbcp：按编号列分类和数字顺序重排梁表文字行，表头不参与移动。
