@@ -9,7 +9,7 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace loffset
 {
-    public class LoffsetCommand : IExtensionApplication
+    public class LayerOffsetCommand : IExtensionApplication
     {
         private const string DirectionIn = "N";
         private const string DirectionOut = "W";

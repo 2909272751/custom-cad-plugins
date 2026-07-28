@@ -1,44 +1,44 @@
-﻿# dktrace v0.1.0
+# dktrace v0.1.0
 
-AutoCAD 2022 .NET 寮€娲炶疆寤撶敓鎴愭彃浠跺垵濮嬬増鏈€?
+AutoCAD 2022 .NET 开洞轮廓生成插件初始版本。
 
-## 鍔熻兘
+## 功能
 
-- `DKTRACE`锛氳瘑鍒紑娲炵鍙峰苟鐢熸垚闂悎 `LWPOLYLINE`
-- `DKLOG`锛氭樉绀鸿瘖鏂棩蹇楄矾寰?
-- 鏀寔鎸夊紑娲炵鍙峰浘灞傝嚜鍔ㄨ瘑鍒紝骞堕€氳繃 `Done/Add/Remove` 淇
-- 鏀寔杩炵画鐐归€夎竟鐣屾牱鏈浘灞傦紝瀹炴椂楂樹寒鍙備笌璁＄畻鐨勮竟鐣屽璞?
-- 鏀寔 `LINE`銆乣LWPOLYLINE` 鐩寸嚎/寮х嚎娈点€乣ARC`銆乣HATCH` 杈圭晫寰幆
-- 澶辫触浣嶇疆浼氭爣璁板埌 `DK_OPENING_FAILED` 鍥惧眰
+- `DKTRACE`：识别开洞符号并生成闭合 `LWPOLYLINE`
+- `DKLOG`：显示诊断日志路径
+- 支持按开洞符号图层自动识别，并通过 `Done/Add/Remove` 修正
+- 支持连续点选边界样本图层，实时高亮参与计算的边界对象
+- 支持 `LINE`、`LWPOLYLINE` 直线/弧线段、`ARC`、`HATCH` 边界循环
+- 失败位置会标记到 `DK_OPENING_FAILED` 图层
 
-## 浣跨敤
+## 使用
 
-鍦?AutoCAD 2022 涓繍琛岋細
+在 AutoCAD 2022 中运行：
 
 ```text
 NETLOAD
 ```
 
-鍔犺浇锛?
+加载：
 
 ```text
 dktrace-v0.1.0-autocad2022.dll
 ```
 
-鐒跺悗杩愯锛?
+然后运行：
 
 ```text
 DKTRACE
 ```
 
-## 鏃ュ織
+## 日志
 
-璇婃柇鏃ュ織锛?
+诊断日志：
 
 ```text
 %TEMP%\DKTRACE.log
 ```
 
-## 浜х墿
+## 产物
 
 - `dktrace-v0.1.0-autocad2022.dll`

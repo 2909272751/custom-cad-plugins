@@ -9,7 +9,7 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace txtboxsel
 {
-    public class TxtboxselCommand : IExtensionApplication
+    public class TextBoxSelectCommand : IExtensionApplication
     {
         private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "TXTBOXSEL.log");
 

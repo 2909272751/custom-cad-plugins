@@ -1,112 +1,112 @@
-﻿# hatchpl
+# hatchpl
 
-AutoCAD Hatch 鏈€澶栧眰杈圭晫鎻愬彇鎻掍欢銆?
+AutoCAD Hatch 最外层边界提取插件。
 
-杩欎釜鎻掍欢鐢ㄤ簬浠?`Hatch` 鐩存帴鐢熸垚鏈€澶栧眰闂悎 `Polyline`銆傚畠涓嶈皟鐢?`HATCHGENERATEBOUNDARY`锛岃€屾槸鐩存帴璇诲彇 AutoCAD .NET API 閲岀殑 `HatchLoop` 鏁版嵁锛屾墍浠ュ彲浠ュ拷鐣ユ枃瀛楄儗鏅伄缃┿€両sland銆佸皬娲炲彛绛夊唴閮?Loop銆?
+这个插件用于从 `Hatch` 直接生成最外层闭合 `Polyline`。它不调用 `HATCHGENERATEBOUNDARY`，而是直接读取 AutoCAD .NET API 里的 `HatchLoop` 数据，所以可以忽略文字背景遮罩、Island、小洞口等内部 Loop。
 
-## 閫傚悎瑙ｅ喅浠€涔堥棶棰?
+## 适合解决什么问题
 
-寰堝 Hatch 鍥犱负鏂囧瓧鑳屾櫙閬僵鎴栧唴閮?Island锛屼細鏈夊緢澶氬皬娲炪€侫utoCAD 鑷甫鐨勮竟鐣岀敓鎴愬鏄撴妸杩欎簺娲炰篃鐢熸垚鍑烘潵锛屽悗缁粺璁￠潰绉椂杩樿鎵嬪姩鍒犻櫎銆?
+很多 Hatch 因为文字背景遮罩或内部 Island，会有很多小洞。AutoCAD 自带的边界生成容易把这些洞也生成出来，后续统计面积时还要手动删除。
 
-`hatchpl` 鐨勭洰鏍囨槸锛?
+`hatchpl` 的目标是：
 
-- 鍙敓鎴?Hatch 鐨勬渶澶栧眰闂悎杞粨锛?
-- 蹇界暐鍐呴儴鏂囧瓧娲炪€両sland銆佸皬娲炲彛锛?
-- 淇濈暀鍘?Hatch锛屼笉鍒犻櫎銆佷笉淇敼锛?
-- 鍦ㄥ綋鍓嶅浘灞傜敓鎴愰棴鍚?`Polyline`锛?
-- 瀵瑰皬浜?600 鐨勫皬鍑瑰彛鍋氳嚜鍔ㄨˉ榻愶紝灏介噺寰楀埌骞插噣鐨勫杈圭晫銆?
+- 只生成 Hatch 的最外层闭合轮廓；
+- 忽略内部文字洞、Island、小洞口；
+- 保留原 Hatch，不删除、不修改；
+- 在当前图层生成闭合 `Polyline`；
+- 对小于 600 的小凹口做自动补齐，尽量得到干净的外边界。
 
-## 鍛戒护
+## 命令
 
-| 鍛戒护 | 浣滅敤 |
+| 命令 | 作用 |
 | --- | --- |
-| `HATCHPL` | 鎻愬彇 Hatch 鏈€澶栧眰闂悎 Polyline |
-| `HATCHPLLOG` | 鏄剧ず璇婃柇鏃ュ織璺緞 |
+| `HATCHPL` | 提取 Hatch 最外层闭合 Polyline |
+| `HATCHPLLOG` | 显示诊断日志路径 |
 
-## 瀹夎 / 鍔犺浇
+## 安装 / 加载
 
-鍦?AutoCAD 鍛戒护琛岃緭鍏ワ細
+在 AutoCAD 命令行输入：
 
 ```text
 NETLOAD
 ```
 
-閫夋嫨 DLL锛?
+选择 DLL：
 
 ```text
 dist\hatchpl-v0.1.11-autocad2022.dll
 ```
 
-鍔犺浇鍚庤繍琛岋細
+加载后运行：
 
 ```text
 HATCHPL
 ```
 
-## 鎿嶄綔娴佺▼
+## 操作流程
 
-### 1. 閫夋嫨瑕佸鐞嗙殑 Hatch 鏍锋湰
+### 1. 选择要处理的 Hatch 样本
 
-鍛戒护琛屼細鎻愮ず锛?
-
-```text
-绗竴姝ワ細閫夋嫨瑕佸鐞嗙殑 Hatch 鏍锋湰
-```
-
-鐐归€変竴涓垨澶氫釜浣犳兂澶勭悊鐨?Hatch銆傛彃浠朵細鎸?`鍥惧眰 + 濉厖鍥炬鍚峘 璁板綍鐩爣绫诲瀷銆?
-
-### 2. 妗嗛€夎澶勭悊鐨?Hatch 鑼冨洿
-
-鍛戒护琛屼細鎻愮ず锛?
+命令行会提示：
 
 ```text
-绗簩姝ワ細妗嗛€夎澶勭悊鐨?Hatch 鑼冨洿
+第一步：选择要处理的 Hatch 样本
 ```
 
-浣犲彲浠ユ閫変竴澶х墖銆傛彃浠跺彧澶勭悊鍜岀涓€姝ユ牱鏈悓绫诲瀷鐨?Hatch锛屽叾浠?Hatch 浼氳嚜鍔ㄨ烦杩囥€?
+点选一个或多个你想处理的 Hatch。插件会按 `图层 + 填充图案名` 记录目标类型。
 
-### 3. 鏌ョ湅缁撴灉
+### 2. 框选要处理的 Hatch 范围
 
-鎻掍欢浼氬湪褰撳墠鍥惧眰鐢熸垚闂悎 Polyline锛屽師 Hatch 涓嶄細琚慨鏀广€?
+命令行会提示：
 
-濡傛灉鐢熸垚缁撴灉涓嶅锛岃繍琛岋細
+```text
+第二步：框选要处理的 Hatch 范围
+```
+
+你可以框选一大片。插件只处理和第一步样本同类型的 Hatch，其他 Hatch 会自动跳过。
+
+### 3. 查看结果
+
+插件会在当前图层生成闭合 Polyline，原 Hatch 不会被修改。
+
+如果生成结果不对，运行：
 
 ```text
 HATCHPLLOG
 ```
 
-鏃ュ織榛樿鍦細
+日志默认在：
 
 ```text
 %TEMP%\HATCHPL.log
 ```
 
-## 褰撳墠瑙勫垯
+## 当前规则
 
-- 涓嶈皟鐢?`HATCHGENERATEBOUNDARY`锛?
-- 鍙鍙?`HatchLoop`锛?
-- 鍚屼竴涓?Hatch 閲屽鏋滀竴涓鍦堝寘鐫€鍙︿竴涓紝鍙繚鐣欏闈㈢殑锛?
-- 濡傛灉涓や釜澶栧湀浜掍笉鍖呭惈锛屽氨閮芥弿鍑烘潵锛?
-- 蹇界暐 `Textbox` 绫诲瀷 Loop锛?
-- 闈㈢Н寰堝皬鐨勫唴閮?Loop 榛樿蹇界暐锛?
-- 灏忎簬 600 鐨勫皬娲炲彛銆佸皬鍑瑰彛榛樿鎷夌洿琛ラ綈锛?
-- 閬囧埌寮х嚎鏃朵細鎸夊垎娈垫姌绾胯繎浼笺€?
+- 不调用 `HATCHGENERATEBOUNDARY`；
+- 只读取 `HatchLoop`；
+- 同一个 Hatch 里如果一个外圈包着另一个，只保留外面的；
+- 如果两个外圈互不包含，就都描出来；
+- 忽略 `Textbox` 类型 Loop；
+- 面积很小的内部 Loop 默认忽略；
+- 小于 600 的小洞口、小凹口默认拉直补齐；
+- 遇到弧线时会按分段折线近似。
 
-## 鏋勫缓
+## 构建
 
-榛樿鎸?AutoCAD 2022 缂栬瘧锛?
+默认按 AutoCAD 2022 编译：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-鎸囧畾 AutoCAD 鐗堟湰锛?
+指定 AutoCAD 版本：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build.ps1 -AcadPath "C:\Program Files\Autodesk\AutoCAD 2022" -AcadLabel "autocad2022"
 ```
 
-鏋勫缓浜х墿锛?
+构建产物：
 
 ```text
 dist\hatchpl-v0.1.11-autocad2022.dll

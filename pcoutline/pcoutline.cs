@@ -8,11 +8,11 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 
-[assembly: CommandClass(typeof(pcoutline.PcoutlineCommands))]
+[assembly: CommandClass(typeof(pcoutline.OuterCommands))]
 
 namespace pcoutline
 {
-    public class PcoutlineCommands
+    public class OuterCommands
     {
         private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "PCOUTLINE.log");
         private const double DefaultTolerance = 20.0;

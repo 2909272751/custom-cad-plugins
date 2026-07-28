@@ -22,10 +22,15 @@ New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 & $csc `
   /target:library `
   /platform:x64 `
+  /codepage:65001 `
   /out:$out `
   /reference:"$AcadPath\acmgd.dll" `
   /reference:"$AcadPath\acdbmgd.dll" `
   /reference:"$AcadPath\accoremgd.dll" `
   (Join-Path $PSScriptRoot "xrefpick.cs")
+
+if ($LASTEXITCODE -ne 0) {
+  throw "C# compiler failed with exit code $LASTEXITCODE"
+}
 
 Write-Host "Built: $out"

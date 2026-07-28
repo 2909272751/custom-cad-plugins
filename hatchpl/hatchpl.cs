@@ -8,11 +8,11 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 
-[assembly: CommandClass(typeof(hatchpl.HatchplCommands))]
+[assembly: CommandClass(typeof(hatchpl.HatchOuterPolylineCommands))]
 
 namespace hatchpl
 {
-    public class HatchplCommands
+    public class HatchOuterPolylineCommands
     {
         private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "HATCHPL.log");
         private const double ArcSegmentLength = 300.0;

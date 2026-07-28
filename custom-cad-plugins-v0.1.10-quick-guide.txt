@@ -1,48 +1,69 @@
-﻿鑷缓 CAD 鎻掍欢 v0.1.10 绠€鏄撹鏄?
-涓€銆侀€氱敤鍔犺浇鏂规硶
+自建 CAD 插件 v0.1.10 简易说明
 
-1. 涓嬭浇闇€瑕佺殑 ZIP 鏂囦欢銆?2. 瑙ｅ帇 ZIP銆?3. 鍦ㄨВ鍘嬬洰褰曡繍琛岋細
+一、通用加载方法
+
+1. 下载需要的 ZIP 文件。
+2. 解压 ZIP。
+3. 在解压目录运行：
    powershell -ExecutionPolicy Bypass -File .\unblock.ps1
-4. 鎵撳紑 AutoCAD銆?5. 鍛戒护琛岃緭鍏ワ細
+4. 打开 AutoCAD。
+5. 命令行输入：
    NETLOAD
-6. 閫夋嫨瑙ｅ帇鐩綍閲岀殑 DLL銆?7. 鍔犺浇瀹屾垚鍚庯紝杈撳叆瀵瑰簲鍛戒护浣跨敤銆?
-娉ㄦ剰锛?- AutoCAD 鍔犺浇 .NET 鎻掍欢鍚庨€氬父涓嶈兘鍗歌浇锛涘鏋滄崲浜嗘柊鐗?DLL锛屽缓璁噸鍚?CAD 鍚庡啀鍔犺浇銆?- 濡傛灉 NETLOAD 鎶モ€滀笉鏀寔鎿嶄綔鈥濇垨 FileLoadException锛屽厛杩愯 ZIP 鍐呯殑 unblock.ps1锛屽啀閲嶆柊 NETLOAD銆?- 涓嶈鐩存帴浠?ZIP 鍐呴儴銆佹祻瑙堝櫒缂撳瓨銆丱neDrive 涓存椂鐩綍鍔犺浇 DLL銆?
-浜屻€佷節涓彃浠跺垎鍒仛浠€涔?
-1. dktrace
-   鍛戒护锛欴KTRACE
-   鐢ㄩ€旓細鏍规嵁鍥剧焊閲岀殑寮€娲炵鍙峰拰杈圭晫鍥惧眰锛岀敓鎴愭礊鍙ｉ棴鍚堣疆寤撶嚎锛屾柟渚垮悗缁粺璁℃礊鍙ｉ潰绉€?
-2. pcoutline
-   鍛戒护锛歅COUTLINE
-   鐢ㄩ€旓細浠庢ゼ灞傛垨鏋勪欢杈圭嚎涓彁鍙栧共鍑€鐨勫杞粨闂悎绾匡紝鏂逛究缁熻澶栬疆寤撻潰绉€?
-3. hatchpl
-   鍛戒护锛欻ATCHPL
-   鐢ㄩ€旓細浠?Hatch 鐩存帴鎻愬彇鏈€澶栧眰闂悎 Polyline锛屽拷鐣ュ唴閮ㄦ枃瀛楁礊銆佸皬娲炲拰 Island銆?
-4. loffset
-   鍛戒护锛歀OFFSET
-   鐢ㄩ€旓細鎸夊浘灞傚拰妗嗛€夊尯鍩熸壒閲?offset 鏇茬嚎瀵硅薄锛屽彲閫夋嫨鍐呭鏂瑰悜銆佹槸鍚﹀垹闄ゅ師鍥惧拰 offset 鍚庨鑹层€?
-5. txtboxsel
-   鍛戒护锛歍XTBOXSEL
-   鐢ㄩ€旓細閫変腑妗嗛€夎寖鍥村唴鍖呭惈鏂囧瓧鐨勫皝闂?PL 妗嗭紝骞惰嚜鍔ㄩ€変腑瀵瑰簲鏂囧瓧銆?
-6. numred
-   鍛戒护锛歂UMRED
-   鐢ㄩ€旓細鎸夊ぇ浜庛€佺瓑浜庛€佸皬浜庢潯浠舵妸閫夊畾鏂囧瓧鍥惧眰涓殑鏁板瓧鏂囧瓧鏍囩孩銆?
-7. numreplace
-   鍛戒护锛歂UMREPLACE
-   鐢ㄩ€旓細鎸夋潯浠舵壒閲忔浛鎹㈤€夊畾鏂囧瓧鍥惧眰涓殑鏁板瓧鏂囧瓧锛屽彲鏇挎崲鎴愬浐瀹氬€兼垨鍖洪棿闅忔満鍊笺€?
-8. beamcolor
-   鍛戒护锛欱EAMCOLOR
-   鐢ㄩ€旓細鎸夋缂栧彿鍓嶇紑鎵归噺淇敼姊佺紪鍙锋枃瀛楀拰鐩爣鍥惧眰绾挎潯棰滆壊锛岃烦杩囨埅闈㈠昂瀵稿拰閰嶇瓔鏂囧瓧銆?
-9. xrefpick
-   鍛戒护锛歑REFPICK
-   鐢ㄩ€旓細杩囨护 DWG 澶栭儴鍙傜収鍜岄攣瀹氬浘灞傞€夋嫨锛屽寮轰粠澶栧弬/濉厖涓婅捣妗嗛€夛紝骞跺彲涓存椂鏀瑰鍙傚浘灞傞鑹插悗涓€閿仮澶嶃€?
-涓夈€佹棩蹇楀懡浠?
-DKTRACE 鍑洪棶棰橈細杈撳叆 DKLOG
-PCOUTLINE 鍑洪棶棰橈細杈撳叆 PCLOG
-HATCHPL 鍑洪棶棰橈細杈撳叆 HATCHPLLOG
-TXTBOXSEL 鍑洪棶棰橈細杈撳叆 TXTBOXLOG
-NUMRED 鍑洪棶棰橈細杈撳叆 NUMREDLOG
-NUMREPLACE 鍑洪棶棰橈細杈撳叆 NUMREPLACELOG
-BEAMCOLOR 鍑洪棶棰橈細杈撳叆 BEAMCOLORLOG
-XREFPICK 鍑洪棶棰橈細杈撳叆 XREFPICKLOG
+6. 选择解压目录里的 DLL。
+7. 加载完成后，输入对应命令使用。
 
-鎶婃棩蹇楁枃浠跺彂鍑烘潵锛屾柟渚垮畾浣嶉棶棰樸€?
+注意：
+- AutoCAD 加载 .NET 插件后通常不能卸载；如果换了新版 DLL，建议重启 CAD 后再加载。
+- 如果 NETLOAD 报“不支持操作”或 FileLoadException，先运行 ZIP 内的 unblock.ps1，再重新 NETLOAD。
+- 不要直接从 ZIP 内部、浏览器缓存、OneDrive 临时目录加载 DLL。
+
+二、九个插件分别做什么
+
+1. dktrace
+   命令：DKTRACE
+   用途：根据图纸里的开洞符号和边界图层，生成洞口闭合轮廓线，方便后续统计洞口面积。
+
+2. pcoutline
+   命令：PCOUTLINE
+   用途：从楼层或构件边线中提取干净的外轮廓闭合线，方便统计外轮廓面积。
+
+3. hatchpl
+   命令：HATCHPL
+   用途：从 Hatch 直接提取最外层闭合 Polyline，忽略内部文字洞、小洞和 Island。
+
+4. loffset
+   命令：LOFFSET
+   用途：按图层和框选区域批量 offset 曲线对象，可选择内外方向、是否删除原图和 offset 后颜色。
+
+5. txtboxsel
+   命令：TXTBOXSEL
+   用途：选中框选范围内包含文字的封闭 PL 框，并自动选中对应文字。
+
+6. numred
+   命令：NUMRED
+   用途：按大于、等于、小于条件把选定文字图层中的数字文字标红。
+
+7. numreplace
+   命令：NUMREPLACE
+   用途：按条件批量替换选定文字图层中的数字文字，可替换成固定值或区间随机值。
+
+8. beamcolor
+   命令：BEAMCOLOR
+   用途：按梁编号前缀批量修改梁编号文字和目标图层线条颜色，跳过截面尺寸和配筋文字。
+
+9. xrefpick
+   命令：XREFPICK
+   用途：过滤 DWG 外部参照和锁定图层选择，增强从外参/填充上起框选，并可临时改外参图层颜色后一键恢复。
+
+三、日志命令
+
+DKTRACE 出问题：输入 DKLOG
+PCOUTLINE 出问题：输入 PCLOG
+HATCHPL 出问题：输入 HATCHPLLOG
+TXTBOXSEL 出问题：输入 TXTBOXLOG
+NUMRED 出问题：输入 NUMREDLOG
+NUMREPLACE 出问题：输入 NUMREPLACELOG
+BEAMCOLOR 出问题：输入 BEAMCOLORLOG
+XREFPICK 出问题：输入 XREFPICKLOG
+
+把日志文件发出来，方便定位问题。

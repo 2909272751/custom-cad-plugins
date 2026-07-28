@@ -11,7 +11,7 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace numred
 {
-    public class NumredCommand : IExtensionApplication
+    public class NumberTextHighlightCommand : IExtensionApplication
     {
         private const string ConditionGreater = "G";
         private const string ConditionEqual = "E";

@@ -8,11 +8,11 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 
-[assembly: CommandClass(typeof(dktrace.DktraceCommands))]
+[assembly: CommandClass(typeof(dktrace.OpeningCommands))]
 
 namespace dktrace
 {
-    public class DktraceCommands
+    public class OpeningCommands
     {
         private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "DKTRACE.log");
         private const double DefaultTolerance = 20.0;

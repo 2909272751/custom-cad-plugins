@@ -1,13 +1,17 @@
-﻿# custom-cad-plugins v0.1.10
+# custom-cad-plugins v0.1.10
 
-鏈鍙戝竷鏂板 `xrefpick` 鎻掍欢锛屽苟缁х画浣跨敤 ZIP 鍙戝竷鍖咃紝ZIP 鍐呭寘鍚?DLL銆乣README.txt` 鍜?`unblock.ps1`銆?
-## 鏂板
+本次发布新增 `xrefpick` 插件，并继续使用 ZIP 发布包，ZIP 内包含 DLL、`README.txt` 和 `unblock.ps1`。
+
+## 新增
 
 - `xrefpick-v0.1.4-autocad2021.zip`
-  - 鍛戒护锛歚XREFPICK`
-  - 杩囨护 DWG 澶栭儴鍙傜収鍜岄攣瀹氬浘灞傚璞￠€夋嫨銆?  - 鍙复鏃朵慨鏀瑰鍙備緷璧栧浘灞傞鑹诧紝骞剁敤鍚屼竴鍛戒护鎭㈠銆?  - 寮€鍚繃婊ゆ椂澧炲己 `PICKAUTO`銆乣PICKDRAG`锛屽苟涓存椂璋冩暣 `PICKSTYLE`锛屽噺灏戝鍙?濉厖鎶㈣蛋妗嗛€夎捣鐐广€?  - 鏃ュ織鍛戒护锛歚XREFPICKLOG`
+  - 命令：`XREFPICK`
+  - 过滤 DWG 外部参照和锁定图层对象选择。
+  - 可临时修改外参依赖图层颜色，并用同一命令恢复。
+  - 开启过滤时增强 `PICKAUTO`、`PICKDRAG`，并临时调整 `PICKSTYLE`，减少外参/填充抢走框选起点。
+  - 日志命令：`XREFPICKLOG`
 
-## 缁х画鍖呭惈
+## 继续包含
 
 - `dktrace-v0.1.1-autocad2022.zip`
 - `pcoutline-v0.1.5-autocad2022.zip`
